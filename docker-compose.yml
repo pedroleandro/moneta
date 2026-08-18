@@ -30,5 +30,13 @@ services:
       retries: 10
     restart: unless-stopped
 
+  mailpit:
+    image: axllent/mailpit
+    container_name: moneta_mailpit
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+    restart: unless-stopped
+
 volumes:
   moneta_db_data:

@@ -11,6 +11,21 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Instala e habilita o Xdebug
+RUN pecl install xdebug \
+    && docker-php-ext-enable xdebug
+
+# Configuração do Xdebug
+RUN { \
+    echo 'xdebug.mode=develop,debug'; \
+    echo 'xdebug.start_with_request=yes'; \
+    echo 'xdebug.client_host=host.docker.internal'; \
+    echo 'xdebug.client_port=9003'; \
+    echo 'xdebug.var_display_max_depth=10'; \
+    echo 'xdebug.var_display_max_children=256'; \
+    echo 'xdebug.var_display_max_data=2048'; \
+} > /usr/local/etc/php/conf.d/xdebug.ini
+
 # Habilita mod_rewrite do Apache (necessário para o .htaccess funcionar)
 RUN a2enmod rewrite
 
@@ -23,6 +38,9 @@ RUN echo '<Directory /var/www/html/moneta>\n\
 
 # Aponta o DocumentRoot para a pasta do projeto
 RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/moneta|' /etc/apache2/sites-available/000-default.conf
+
+# Instala o Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html/moneta
 

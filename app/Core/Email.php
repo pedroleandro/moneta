@@ -14,17 +14,28 @@ class Email
     public function __construct()
     {
         $this->mail = new PHPMailer(true);
-
         $this->mail->SMTPDebug = SMTP::DEBUG_OFF;
         $this->mail->isSMTP();
-        $this->mail->Host = 'smtp.sendgrid.net';
-        $this->mail->SMTPAuth = true;
-        $this->mail->Username = USERNAME_SENDGRID;
-        $this->mail->Password = PASSWORD_SENDGRID;
-        $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        $this->mail->Port = 465;
         $this->mail->setLanguage('br');
         $this->mail->CharSet = PHPMailer::CHARSET_UTF8;
+        $this->mail->Host = MAIL_HOST;
+        $this->mail->Port = MAIL_PORT;
+
+        if (MAIL_DRIVER === "mailpit") {
+            // Mailpit: servidor SMTP local, sem autenticação, sem TLS.
+            // Os e-mails ficam visíveis em http://localhost:8025
+            $this->mail->SMTPAuth = false;
+            $this->mail->SMTPAutoTLS = false;
+            $this->mail->SMTPSecure = false;
+        } else {
+            // Qualquer provedor SMTP real (Brevo, SendGrid, Mailgun etc.)
+            $this->mail->SMTPAuth = true;
+            $this->mail->Username = MAIL_USERNAME;
+            $this->mail->Password = MAIL_PASSWORD;
+            $this->mail->SMTPSecure = MAIL_ENCRYPTION === "ssl"
+                ? PHPMailer::ENCRYPTION_SMTPS
+                : PHPMailer::ENCRYPTION_STARTTLS;
+        }
     }
 
     public function bootstrap(string $subject, string $body, string $toEmail, string $toName): self
@@ -78,7 +89,7 @@ class Email
             return true;
 
         } catch (Exception $mailException) {
-            throw new \InvalidArgumentException("Erro ao enviar e-mail: ", $mailException->getMessage());
+            throw new \InvalidArgumentException("Erro ao enviar e-mail: " . $mailException->getMessage());
         }
     }
 }

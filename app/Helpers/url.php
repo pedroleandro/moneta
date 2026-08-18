@@ -1,5 +1,7 @@
 <?php
 
+use JetBrains\PhpStorm\NoReturn;
+
 function url(string $path = null): string
 {
     $base = APP_URL;
@@ -11,6 +13,7 @@ function url(string $path = null): string
     return $base;
 }
 
+#[NoReturn]
 function redirect(string $path): void
 {
     header("Location: " . url($path));
@@ -31,6 +34,17 @@ function assets(string $path = null): string
 function assets_mazer(string $path = null): string
 {
     $base = APP_URL . "/resources/themes/dist";
+
+    if ($path) {
+        return $base . '/' . ltrim($path, '/');
+    }
+
+    return $base;
+}
+
+function assets_sneat(string $path = null): string
+{
+    $base = APP_URL . "/resources/themes/sneat/sneat-bootstrap-html-admin-template-free";
 
     if ($path) {
         return $base . '/' . ltrim($path, '/');

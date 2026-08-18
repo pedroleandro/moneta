@@ -18,10 +18,18 @@ define("DB_USERNAME", $_ENV['DB_USERNAME'] ?? "user");
 define("DB_PASSWORD", $_ENV['DB_PASSWORD'] ?? "password");
 define("DB_CHARSET", $_ENV['DB_CHARSET'] ?? "utf8mb4");
 
+define("APP_ENV", $_ENV['APP_ENV'] ?? "production");
+
 define("EMAIL_SEND", $_ENV['EMAIL_SEND'] ?? "contato@moneta.com.br");
 define("EMAIL_NAME", $_ENV['EMAIL_NAME'] ?? "Equipe Técnica do MONETA");
-define("USERNAME_SENDGRID", $_ENV['USERNAME_SENDGRID'] ?? "apikey");
-define("PASSWORD_SENDGRID", $_ENV['PASSWORD_SENDGRID'] ?? "secret");
+
+// Em local, usa Mailpit (SMTP falso, sem enviar de verdade nem gastar créditos)
+define("MAIL_DRIVER", $_ENV['MAIL_DRIVER'] ?? (APP_ENV === "local" ? "mailpit" : "smtp"));
+define("MAIL_HOST", $_ENV['MAIL_HOST'] ?? "mailpit");
+define("MAIL_PORT", $_ENV['MAIL_PORT'] ?? 1025);
+define("MAIL_USERNAME", $_ENV['MAIL_USERNAME'] ?? "");
+define("MAIL_PASSWORD", $_ENV['MAIL_PASSWORD'] ?? "");
+define("MAIL_ENCRYPTION", $_ENV['MAIL_ENCRYPTION'] ?? "tls"); // tls (587) ou ssl (465)
 
 define("APP_DEVELOPER", $_ENV['APP_DEVELOPER'] ?? "Pedro Leandro");
 
