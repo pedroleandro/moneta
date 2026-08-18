@@ -32,8 +32,7 @@ class RateLimiter
 
             return $attempts >= self::MAX_ATTEMPTS;
         } catch (\Throwable $exception) {
-            // Se o Redis estiver fora do ar, não bloqueia o login por causa disso.
-            error_log("RateLimiter indisponível: " . $exception->getMessage());
+            Logger::error("RateLimiter indisponível", ["exception" => $exception->getMessage()]);
             return false;
         }
     }
@@ -55,7 +54,7 @@ class RateLimiter
                 $redis->expire($key, self::DECAY_SECONDS);
             }
         } catch (\Throwable $exception) {
-            error_log("RateLimiter indisponível: " . $exception->getMessage());
+            Logger::error("RateLimiter indisponível", ["exception" => $exception->getMessage()]);
         }
     }
 
@@ -64,7 +63,7 @@ class RateLimiter
         try {
             self::connection()->del(self::key($email, $ip));
         } catch (\Throwable $exception) {
-            error_log("RateLimiter indisponível: " . $exception->getMessage());
+            Logger::error("RateLimiter indisponível", ["exception" => $exception->getMessage()]);
         }
     }
 

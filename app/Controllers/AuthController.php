@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Email;
+use App\Core\Logger;
 use App\Core\Message;
 use App\Core\Session;
 use App\Core\SessionTimeoutMiddleware;
@@ -68,6 +69,12 @@ class AuthController extends Controller
             AuditLog::record(LogEvent::LOGIN_FAILED, $user?->getId(), ["email" => $email]);
             flash_old(["email" => $email]);
             Message::error("E-mail ou senha inválidos.");
+            redirect("/entrar");
+            return;
+        }
+
+        if (!$user->isEmailVerified()) {
+            Message::warning("Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.");
             redirect("/entrar");
             return;
         }
@@ -174,7 +181,28 @@ class AuthController extends Controller
 
         $user->save();
 
+        $token = $user->setEmailVerificationToken();
+        $user->save();
+
         AuditLog::record(LogEvent::USER_REGISTERED, $user->getId());
+
+        try {
+            $verifyUrl = url("/verificar-email/" . $token);
+
+            (new Email())
+                ->bootstrap(
+                    "Confirme seu e-mail | " . APP_NAME,
+                    "Clique no link para confirmar seu e-mail: <a href=\"{$verifyUrl}\">{$verifyUrl}</a>.",
+                    $user->getEmail(),
+                    $user->getName()
+                )
+                ->send();
+        } catch (\Throwable $exception) {
+            Logger::error("Falha ao enviar e-mail de verificação", [
+                "user_id" => $user->getId(),
+                "exception" => $exception->getMessage(),
+            ]);
+        }
 
         clear_old();
 
@@ -301,6 +329,67 @@ class AuthController extends Controller
         Auth::logout();
 
         Message::success("Senha redefinida com sucesso. Faça login.");
+        redirect("/entrar");
+    }
+
+    public function verifyEmail(?array $data): void
+    {
+        $token = $data["token"] ?? "";
+        $user = $token ? User::findByEmailVerificationToken($token) : null;
+
+        if (!$user) {
+            Message::error("Link de confirmação inválido.");
+            redirect("/entrar");
+            return;
+        }
+
+        if ($user->isEmailVerified()) {
+            Message::success("E-mail já confirmado. Faça login.");
+            redirect("/entrar");
+            return;
+        }
+
+        $user->markEmailAsVerified();
+        $user->clearEmailVerificationToken();
+        $user->save();
+
+        AuditLog::record(LogEvent::EMAIL_VERIFIED, $user->getId());
+
+        Message::success("E-mail confirmado com sucesso! Faça login.");
+        redirect("/entrar");
+    }
+
+    public function resendVerification(?array $data): void
+    {
+        $this->validateCsrfToken($data, "/entrar");
+
+        $email = trim($data["email"] ?? "");
+        $user = User::findByEmail($email);
+
+        if ($user && !$user->isEmailVerified()) {
+            $token = $user->setEmailVerificationToken();
+            $user->save();
+
+            try {
+                $verifyUrl = url("/verificar-email/" . $token);
+
+                (new Email())
+                    ->bootstrap(
+                        "Confirme seu e-mail | " . APP_NAME,
+                        "Clique no link para confirmar seu e-mail: <a href=\"{$verifyUrl}\">{$verifyUrl}</a>.",
+                        $user->getEmail(),
+                        $user->getName()
+                    )
+                    ->send();
+            } catch (\Throwable $exception) {
+                Logger::error("Falha ao reenviar e-mail de verificação", [
+                    "user_id" => $user->getId(),
+                    "exception" => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        Message::success("Se o e-mail existir e ainda não estiver confirmado, reenviamos o link.");
         redirect("/entrar");
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Core\AbstractModel;
-use Random\RandomException;
 
 class User extends AbstractModel
 {
@@ -19,6 +18,8 @@ class User extends AbstractModel
         "email_verified_at",
         "reset_token",
         "reset_expires_at",
+        "email_verification_token",
+        "email_verification_sent_at",
     ];
 
     protected array $required = [
@@ -74,8 +75,8 @@ class User extends AbstractModel
             throw new \InvalidArgumentException("A senha não pode ser vazia.");
         }
 
-        if (strlen($password) < 8 || strlen($password) > 16) {
-            throw new \InvalidArgumentException("A senha deve ter entre 8 e 16 caracteres.");
+        if (strlen($password) < 8 || strlen($password) > 72) {
+            throw new \InvalidArgumentException("A senha deve ter entre 8 e 72 caracteres.");
         }
 
         $this->attributes["password"] = password_hash($password, PASSWORD_DEFAULT);
@@ -111,9 +112,28 @@ class User extends AbstractModel
         return !empty($this->attributes["email_verified_at"]);
     }
 
-    /**
-     * @throws RandomException
-     */
+    public function setEmailVerificationToken(): string
+    {
+        $token = bin2hex(random_bytes(32));
+
+        $this->attributes["email_verification_token"] = hash("sha256", $token);
+        $this->attributes["email_verification_sent_at"] = $this->now();
+
+        return $token;
+    }
+
+    public static function findByEmailVerificationToken(string $token): ?self
+    {
+        $hash = hash("sha256", $token);
+
+        return (new static())->where("email_verification_token", "=", $hash)->first();
+    }
+
+    public function clearEmailVerificationToken(): void
+    {
+        $this->attributes["email_verification_token"] = null;
+    }
+
     public function setResetToken(): string
     {
         $token = bin2hex(random_bytes(32));
@@ -129,9 +149,6 @@ class User extends AbstractModel
         return $this->attributes["reset_token"] ?? null;
     }
 
-    /**
-     * @throws \Exception
-     */
     public function setResetExpiresAt(): void
     {
         $timezone = new \DateTimeZone(APP_TIMEZONE);
@@ -145,9 +162,6 @@ class User extends AbstractModel
         return $this->attributes["reset_expires_at"] ?? null;
     }
 
-    /**
-     * @throws \Exception
-     */
     public function resetTokenIsExpired(): bool
     {
         $expiresAt = $this->getResetExpiresAt();

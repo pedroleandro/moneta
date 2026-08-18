@@ -22,13 +22,10 @@ class Email
         $this->mail->Port = MAIL_PORT;
 
         if (MAIL_DRIVER === "mailpit") {
-            // Mailpit: servidor SMTP local, sem autenticação, sem TLS.
-            // Os e-mails ficam visíveis em http://localhost:8025
             $this->mail->SMTPAuth = false;
             $this->mail->SMTPAutoTLS = false;
             $this->mail->SMTPSecure = false;
         } else {
-            // Qualquer provedor SMTP real (Brevo, SendGrid, Mailgun etc.)
             $this->mail->SMTPAuth = true;
             $this->mail->Username = MAIL_USERNAME;
             $this->mail->Password = MAIL_PASSWORD;
@@ -89,6 +86,10 @@ class Email
             return true;
 
         } catch (Exception $mailException) {
+            Logger::error("Falha ao enviar e-mail", [
+                "to" => $this->data->toEmail ?? null,
+                "exception" => $mailException->getMessage(),
+            ]);
             throw new \InvalidArgumentException("Erro ao enviar e-mail: " . $mailException->getMessage());
         }
     }

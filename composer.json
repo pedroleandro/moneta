@@ -27,6 +27,7 @@
     "league/plates": "^3.6",
     "coffeecode/router": "^2.0",
     "phpmailer/phpmailer": "^7.0.0",
-    "ext-redis": "*"
+    "ext-redis": "*",
+    "monolog/monolog": "^3.10"
   }
 }

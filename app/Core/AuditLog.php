@@ -26,8 +26,7 @@ class AuditLog
                 "created_at" => (new \DateTime("now", new DateTimeZone("America/Sao_Paulo")))->format("Y-m-d H:i:s")
             ]);
         } catch (\Throwable $exception) {
-            // Falha ao gravar log de auditoria não pode derrubar a aplicação.
-            error_log("Falha ao registrar audit log [{$event}]: " . $exception->getMessage());
+            Logger::error("Falha ao registrar audit log [{$event}]: ", ["exception" => $exception->getMessage()]);
         }
     }
 

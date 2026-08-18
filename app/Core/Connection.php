@@ -52,6 +52,10 @@ class Connection
                 );
             }
         } catch (PDOException $PDOException) {
+            Logger::critical("Falha na conexão com o banco de dados", [
+                "exception" => $PDOException->getMessage(),
+            ]);
+
             throw new \RuntimeException("Erro na conexão: " . $PDOException->getMessage(), 500);
         }
 

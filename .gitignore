@@ -19,6 +19,7 @@
 /storage/cache/
 /storage/logs/
 /storage/uploads/
+storage/logs/*.log
 
 # ==============================================================================
 # Arquivos de sistema

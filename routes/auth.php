@@ -23,6 +23,9 @@ $router->get("/redefinir-senha/sucesso", "AuthController@sendResetLinkSuccess");
 $router->get("/resetar-senha/{token}", "AuthController@resetPassword");
 $router->post("/resetar-senha", "AuthController@updatePassword");
 
+$router->get("/verificar-email/{token}", "AuthController@verifyEmail");
+$router->post("/reenviar-verificacao", "AuthController@resendVerification");
+
 /*
 |--------------------------------------------------------------------------
 | Rotas Autenticadas
