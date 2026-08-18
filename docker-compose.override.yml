@@ -1,0 +1,25 @@
+services:
+  db:
+    ports:
+      - "127.0.0.1:3309:3306"
+
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: moneta_mailpit
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+    restart: unless-stopped
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: moneta_redisinsight
+    ports:
+      - "127.0.0.1:5540:5540"
+    depends_on:
+      - redis
+    restart: unless-stopped

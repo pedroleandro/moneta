@@ -16,8 +16,6 @@ services:
   db:
     image: mysql:8.0
     container_name: moneta_db
-    ports:
-      - "127.0.0.1:3309:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: moneta
@@ -30,12 +28,9 @@ services:
       retries: 10
     restart: unless-stopped
 
-  mailpit:
-    image: axllent/mailpit
-    container_name: moneta_mailpit
-    ports:
-      - "127.0.0.1:8025:8025"
-      - "127.0.0.1:1025:1025"
+  redis:
+    image: redis:7-alpine
+    container_name: moneta_redis
     restart: unless-stopped
 
 volumes:

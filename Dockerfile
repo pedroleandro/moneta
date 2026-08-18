@@ -12,8 +12,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Instala e habilita o Xdebug
-RUN pecl install xdebug \
-    && docker-php-ext-enable xdebug
+RUN pecl install xdebug redis \
+    && docker-php-ext-enable xdebug redis
 
 # Configuração do Xdebug
 RUN { \

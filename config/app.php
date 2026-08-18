@@ -23,15 +23,20 @@ define("APP_ENV", $_ENV['APP_ENV'] ?? "production");
 define("EMAIL_SEND", $_ENV['EMAIL_SEND'] ?? "contato@moneta.com.br");
 define("EMAIL_NAME", $_ENV['EMAIL_NAME'] ?? "Equipe Técnica do MONETA");
 
-// Em local, usa Mailpit (SMTP falso, sem enviar de verdade nem gastar créditos)
 define("MAIL_DRIVER", $_ENV['MAIL_DRIVER'] ?? (APP_ENV === "local" ? "mailpit" : "smtp"));
 define("MAIL_HOST", $_ENV['MAIL_HOST'] ?? "mailpit");
 define("MAIL_PORT", $_ENV['MAIL_PORT'] ?? 1025);
 define("MAIL_USERNAME", $_ENV['MAIL_USERNAME'] ?? "");
 define("MAIL_PASSWORD", $_ENV['MAIL_PASSWORD'] ?? "");
-define("MAIL_ENCRYPTION", $_ENV['MAIL_ENCRYPTION'] ?? "tls"); // tls (587) ou ssl (465)
+define("MAIL_ENCRYPTION", $_ENV['MAIL_ENCRYPTION'] ?? "tls");
+
+define("REDIS_HOST", $_ENV['REDIS_HOST'] ?? "redis");
+define("REDIS_PORT", $_ENV['REDIS_PORT'] ?? 6379);
 
 define("APP_DEVELOPER", $_ENV['APP_DEVELOPER'] ?? "Pedro Leandro");
+
+define("AUTH_MAX_ATTEMPTS", (int)($_ENV['AUTH_MAX_ATTEMPTS'] ?? 5));
+define("AUTH_LOCKOUT_MINUTES", (int)($_ENV['AUTH_LOCKOUT_MINUTES'] ?? 15));
 
 define("TICKET_MAX_ATTACHMENTS", $_ENV['TICKET_MAX_ATTACHMENTS'] ?? 10);
 define("UPLOAD_MAX_SIZE", $_ENV['UPLOAD_MAX_SIZE'] ?? 5 * 1024 * 1024);

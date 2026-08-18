@@ -8,9 +8,13 @@ use App\Core\Email;
 use App\Core\Message;
 use App\Core\Session;
 use App\Core\SessionTimeoutMiddleware;
+use App\Models\LoginAttempt;
 use App\Models\User;
 use JetBrains\PhpStorm\NoReturn;
 use Random\RandomException;
+use App\Core\AuditLog;
+use App\Core\LogEvent;
+use App\Core\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -40,6 +44,7 @@ class AuthController extends Controller
 
         $email = trim($data["email"] ?? "");
         $password = $data["password"] ?? "";
+        $ip = $_SERVER["REMOTE_ADDR"] ?? "0.0.0.0";
 
         if (!$email || !$password) {
             flash_old(["email" => $email]);
@@ -48,14 +53,26 @@ class AuthController extends Controller
             return;
         }
 
+        if (RateLimiter::tooManyAttempts($email, $ip)) {
+            $minutos = RateLimiter::minutesRemaining($email, $ip);
+            AuditLog::record(LogEvent::ACCOUNT_LOCKED, null, ["email" => $email]);
+            Message::error("Muitas tentativas de login. Tente novamente em {$minutos} minuto(s).");
+            redirect("/entrar");
+            return;
+        }
+
         $user = User::findByEmail($email);
 
         if (!$user || !$user->passwordVerify($password)) {
+            RateLimiter::hit($email, $ip, false);
+            AuditLog::record(LogEvent::LOGIN_FAILED, $user?->getId(), ["email" => $email]);
             flash_old(["email" => $email]);
             Message::error("E-mail ou senha inválidos.");
             redirect("/entrar");
             return;
         }
+
+        RateLimiter::hit($email, $ip, true);
 
         $session = new Session();
         $session->regenerate();
@@ -63,13 +80,19 @@ class AuthController extends Controller
 
         SessionTimeoutMiddleware::start();
 
+        AuditLog::record(LogEvent::LOGIN_SUCCESS, $user->getId());
+
         clear_old();
 
         redirect("/dashboard");
     }
 
+    #[NoReturn]
     public function logout(): void
     {
+        $user = Auth::user();
+        AuditLog::record(LogEvent::LOGOUT, $user->id ?? null);
+
         Auth::logout();
         redirect("/entrar");
     }
@@ -151,6 +174,8 @@ class AuthController extends Controller
 
         $user->save();
 
+        AuditLog::record(LogEvent::USER_REGISTERED, $user->getId());
+
         clear_old();
 
         redirect("/cadastrar/sucesso");
@@ -189,6 +214,8 @@ class AuthController extends Controller
         if ($user) {
             $token = $user->setResetToken();
             $user->save();
+
+            AuditLog::record(LogEvent::PASSWORD_RESET_REQUESTED, $user->getId());
 
             try {
                 $resetUrl = url("/resetar-senha/" . $token);
@@ -233,6 +260,9 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * @throws \Exception
+     */
     public function updatePassword(?array $data): void
     {
         $this->validateCsrfToken($data, "/esqueceu-senha");
@@ -265,6 +295,8 @@ class AuthController extends Controller
 
         $user->clearResetToken();
         $user->save();
+
+        AuditLog::record(LogEvent::PASSWORD_CHANGED, $user->getId());
 
         Auth::logout();
 
