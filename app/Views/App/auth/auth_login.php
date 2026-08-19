@@ -85,6 +85,7 @@
                                     name="email"
                                     value="<?= old('email') ?>"
                                     placeholder="Informe seu email"
+                                    required
                                     autofocus/>
                         </div>
                         <div class="mb-6 form-password-toggle">
@@ -96,6 +97,7 @@
                                         class="form-control"
                                         name="password"
                                         placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
+                                        required
                                         aria-describedby="password"/>
                                 <span class="input-group-text cursor-pointer"><i
                                             class="icon-base bx bx-hide"></i></span>

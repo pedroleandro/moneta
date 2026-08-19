@@ -80,12 +80,14 @@
                             <label for="name" class="form-label">Nome Completo</label>
                             <input type="text" class="form-control" id="name" name="name"
                                    value="<?= old('name') ?>"
+                                   required
                                    placeholder="Informe seu nome completo"/>
                         </div>
                         <div class="mb-6">
                             <label for="email" class="form-label">Email</label>
                             <input type="text" class="form-control" id="email" name="email"
                                    value="<?= old('email') ?>"
+                                   required
                                    placeholder="Informe seu melhor e-mail"/>
                         </div>
                         <div class="form-password-toggle">
@@ -96,6 +98,7 @@
                                         id="password"
                                         class="form-control"
                                         name="password"
+                                        required
                                         placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
                                         aria-describedby="password"/>
                                 <span class="input-group-text cursor-pointer"><i
@@ -111,6 +114,7 @@
                                         id="password-confirm"
                                         class="form-control"
                                         name="password-confirm"
+                                        required
                                         placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
                                         aria-describedby="password-confirm"/>
                                 <span class="input-group-text cursor-pointer"><i

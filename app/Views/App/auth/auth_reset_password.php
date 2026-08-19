@@ -85,6 +85,7 @@
                                         id="password"
                                         class="form-control"
                                         name="password"
+                                        required
                                         placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
                                         autofocus/>
                                 <span class="input-group-text cursor-pointer"><i
