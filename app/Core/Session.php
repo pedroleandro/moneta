@@ -10,13 +10,19 @@ class Session
             session_save_path(__DIR__ . "/../../storage/sessions");
             session_set_cookie_params([
                 'lifetime' => 0,
-                'path'     => '/',
-                'domain'   => '',
-                'secure'   => false, // mude para true em produção com HTTPS
+                'path' => '/',
+                'domain' => '',
+                'secure' => APP_ENV !== 'local', // HTTPS obrigatório fora de dev
                 'httponly' => true,
                 'samesite' => 'Lax'
             ]);
             session_start();
+
+            Logger::info("Sessão iniciada", [
+                "save_path" => session_save_path(),
+                "session_id" => session_id(),
+                "tem_auth" => isset($_SESSION["auth"]),
+            ]);
         }
     }
 

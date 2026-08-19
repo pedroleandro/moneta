@@ -51,6 +51,8 @@
     <script src="<?= assets_sneat('/assets/js/config.js') ?>"></script>
 
     <link rel="stylesheet" href="<?= assets('/css/custom.css') ?>"/>
+
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 
 <body>

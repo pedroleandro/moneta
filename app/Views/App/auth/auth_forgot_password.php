@@ -87,6 +87,14 @@
                                     placeholder="Informe seu e-mail cadastrado"
                                     autofocus/>
                         </div>
+
+                        <div class="cf-turnstile mb-8"
+                             data-sitekey="<?= TURNSTILE_SITE_KEY ?>"
+                             data-theme="light"
+                             data-size="flexible"
+                             data-language="pt-BR">
+                        </div>
+
                         <button class="btn btn-primary d-grid w-100">Enviar</button>
                     </form>
                     <div class="text-center">

@@ -37,6 +37,9 @@ define("REDIS_PORT", $_ENV['REDIS_PORT'] ?? 6379);
 define("GOOGLE_CLIENT_ID", $_ENV['GOOGLE_CLIENT_ID'] ?? "");
 define("GOOGLE_CLIENT_SECRET", $_ENV['GOOGLE_CLIENT_SECRET'] ?? "");
 
+define("TURNSTILE_SITE_KEY", $_ENV['TURNSTILE_SITE_KEY'] ?? "");
+define("TURNSTILE_SECRET_KEY", $_ENV['TURNSTILE_SECRET_KEY'] ?? "");
+
 define("APP_DEVELOPER", $_ENV['APP_DEVELOPER'] ?? "Pedro Leandro");
 
 define("AUTH_MAX_ATTEMPTS", (int)($_ENV['AUTH_MAX_ATTEMPTS'] ?? 5));

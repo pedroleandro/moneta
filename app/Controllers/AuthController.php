@@ -10,6 +10,7 @@ use App\Core\Message;
 use App\Core\Session;
 use App\Core\SessionTimeoutMiddleware;
 use App\Core\PasswordPolicy;
+use App\Core\Turnstile;
 use App\Models\User;
 use JetBrains\PhpStorm\NoReturn;
 use Random\RandomException;
@@ -46,6 +47,12 @@ class AuthController extends Controller
         $email = trim($data["email"] ?? "");
         $password = $data["password"] ?? "";
         $ip = $_SERVER["REMOTE_ADDR"] ?? "0.0.0.0";
+
+        if (!Turnstile::verify($data["cf-turnstile-response"] ?? null, $ip)) {
+            Message::error("Não foi possível confirmar que você não é um robô. Tente novamente.");
+            redirect("/entrar");
+            return;
+        }
 
         if (!$email || !$password) {
             flash_old(["email" => $email]);
@@ -121,6 +128,12 @@ class AuthController extends Controller
     public function store(?array $data): void
     {
         $this->validateCsrfToken($data, "/cadastrar");
+
+        if (!Turnstile::verify($data["cf-turnstile-response"] ?? null, $_SERVER["REMOTE_ADDR"] ?? null)) {
+            Message::error("Não foi possível confirmar que você não é um robô. Tente novamente.");
+            redirect("/cadastrar");
+            return;
+        }
 
         $name = trim($data["name"] ?? "");
         $email = trim($data["email"] ?? "");
@@ -236,6 +249,12 @@ class AuthController extends Controller
     public function sendResetLink(?array $data): void
     {
         $this->validateCsrfToken($data, "/esqueceu-senha");
+
+        if (!Turnstile::verify($data["cf-turnstile-response"] ?? null, $_SERVER["REMOTE_ADDR"] ?? null)) {
+            Message::error("Não foi possível confirmar que você não é um robô. Tente novamente.");
+            redirect("/esqueceu-senha");
+            return;
+        }
 
         $email = trim($data["email"] ?? "");
         $user = User::findByEmail($email);
