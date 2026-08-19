@@ -92,7 +92,8 @@ class AuthController extends Controller
         $session->regenerate();
         $session->set("auth", $user->toSessionData());
 
-        SessionTimeoutMiddleware::start();
+        $rememberMe = !empty($data["remember-me"] ?? null);
+        SessionTimeoutMiddleware::start($rememberMe);
 
         AuditLog::record(LogEvent::LOGIN_SUCCESS, $user->getId());
 
