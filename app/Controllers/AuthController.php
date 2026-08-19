@@ -9,7 +9,7 @@ use App\Core\Logger;
 use App\Core\Message;
 use App\Core\Session;
 use App\Core\SessionTimeoutMiddleware;
-use App\Models\LoginAttempt;
+use App\Core\PasswordPolicy;
 use App\Models\User;
 use JetBrains\PhpStorm\NoReturn;
 use Random\RandomException;
@@ -144,6 +144,13 @@ class AuthController extends Controller
         if ($password !== $passwordConfirm) {
             flash_old(["name" => $name, "email" => $email]);
             Message::error("As senhas não conferem.");
+            redirect("/cadastrar");
+            return;
+        }
+
+        if (PasswordPolicy::isPwned($password) === true) {
+            flash_old(["name" => $name, "email" => $email]);
+            Message::error("Essa senha já apareceu em vazamentos conhecidos. Escolha outra senha.");
             redirect("/cadastrar");
             return;
         }
@@ -309,6 +316,12 @@ class AuthController extends Controller
 
         if ($password !== $passwordConfirm) {
             Message::error("As senhas não conferem.");
+            redirect("/resetar-senha/" . $token);
+            return;
+        }
+
+        if (PasswordPolicy::isPwned($password) === true) {
+            Message::error("Essa senha já apareceu em vazamentos conhecidos. Escolha outra senha.");
             redirect("/resetar-senha/" . $token);
             return;
         }

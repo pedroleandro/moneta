@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Core;
 
 class Session
@@ -7,16 +8,14 @@ class Session
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_save_path(__DIR__ . "/../../storage/sessions");
-
             session_set_cookie_params([
                 'lifetime' => 0,
                 'path'     => '/',
                 'domain'   => '',
                 'secure'   => false, // mude para true em produção com HTTPS
                 'httponly' => true,
-                'samesite' => 'Strict'
+                'samesite' => 'Lax'
             ]);
-
             session_start();
         }
     }
@@ -43,7 +42,8 @@ class Session
 
     public function get(string $key): mixed
     {
-        return isset($_SESSION[$key]) ? (object)$_SESSION[$key] : null;
+        $value = $_SESSION[$key] ?? null;
+        return is_array($value) ? (object)$value : $value;
     }
 
     public function set(string $key, mixed $value): self
@@ -72,7 +72,6 @@ class Session
     public function destroy(): self
     {
         $_SESSION = [];
-
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
             setcookie(
@@ -85,7 +84,6 @@ class Session
                 $params["httponly"]
             );
         }
-
         session_destroy();
         return $this;
     }

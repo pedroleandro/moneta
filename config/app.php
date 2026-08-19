@@ -9,6 +9,7 @@ define("APP_URL", $_ENV['APP_URL'] ?? "http://localhost:8009");
 define("APP_NAME", $_ENV['APP_NAME'] ?? "MONETA - Sistema Web de Controle Financeiro Pessoal");
 
 define("APP_TIMEZONE", $_ENV['APP_TIMEZONE'] ?? "America/Sao_Paulo");
+date_default_timezone_set(APP_TIMEZONE);
 
 define("DB_CONNECTION", $_ENV['DB_CONNECTION'] ?? "mysql");
 define("DB_HOST", $_ENV['DB_HOST'] ?? "localhost");
@@ -32,6 +33,9 @@ define("MAIL_ENCRYPTION", $_ENV['MAIL_ENCRYPTION'] ?? "tls");
 
 define("REDIS_HOST", $_ENV['REDIS_HOST'] ?? "redis");
 define("REDIS_PORT", $_ENV['REDIS_PORT'] ?? 6379);
+
+define("GOOGLE_CLIENT_ID", $_ENV['GOOGLE_CLIENT_ID'] ?? "");
+define("GOOGLE_CLIENT_SECRET", $_ENV['GOOGLE_CLIENT_SECRET'] ?? "");
 
 define("APP_DEVELOPER", $_ENV['APP_DEVELOPER'] ?? "Pedro Leandro");
 

@@ -72,7 +72,9 @@ class User extends AbstractModel
     public function setPassword(?string $password): void
     {
         if ($password === null || $password === "") {
-            throw new \InvalidArgumentException("A senha não pode ser vazia.");
+            // Usuário de login social pode não ter senha ainda.
+            $this->attributes["password"] = null;
+            return;
         }
 
         if (strlen($password) < 8 || strlen($password) > 72) {
@@ -90,6 +92,11 @@ class User extends AbstractModel
     public function passwordVerify(string $password): bool
     {
         return password_verify($password, $this->attributes["password"] ?? "");
+    }
+
+    public function hasPassword(): bool
+    {
+        return !empty($this->attributes["password"]);
     }
 
     public function setAvatar(?string $avatar): void

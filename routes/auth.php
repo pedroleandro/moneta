@@ -26,6 +26,12 @@ $router->post("/resetar-senha", "AuthController@updatePassword");
 $router->get("/verificar-email/{token}", "AuthController@verifyEmail");
 $router->post("/reenviar-verificacao", "AuthController@resendVerification");
 
+$router->get("/entrar/google", "SocialAuthController@redirectToGoogle");
+$router->get("/entrar/google/callback", "SocialAuthController@handleGoogleCallback");
+
+$router->get("/cadastrar/confirmar-social", "SocialAuthController@confirmSocialSignup");
+$router->post("/cadastrar/confirmar-social", "SocialAuthController@storeSocialSignup");
+
 /*
 |--------------------------------------------------------------------------
 | Rotas Autenticadas

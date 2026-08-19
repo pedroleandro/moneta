@@ -2,7 +2,7 @@
 
 require __DIR__ . "/vendor/autoload.php";
 
-set_exception_handler(function (\Throwable $exception) {
+set_exception_handler(static function (\Throwable $exception) {
     \App\Core\Logger::critical("Exceção não tratada", [
         "message" => $exception->getMessage(),
         "file" => $exception->getFile(),
