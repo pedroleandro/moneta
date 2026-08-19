@@ -19,7 +19,7 @@ class Auth
     {
         $session = new Session();
         $session->unset("auth");
-        $session->unset("logged_in_at");
+        $session->destroy();
     }
 
     public static function requireLogin(): void

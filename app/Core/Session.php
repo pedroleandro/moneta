@@ -7,22 +7,19 @@ class Session
     public function __construct()
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_save_path(__DIR__ . "/../../storage/sessions");
+
+            $handler = new DatabaseSessionHandler();
+            session_set_save_handler($handler, true);
+
             session_set_cookie_params([
                 'lifetime' => 0,
-                'path' => '/',
-                'domain' => '',
-                'secure' => APP_ENV !== 'local', // HTTPS obrigatório fora de dev
+                'path'     => '/',
+                'domain'   => '',
+                'secure'   => APP_ENV !== 'local', // HTTPS obrigatório fora de dev
                 'httponly' => true,
                 'samesite' => 'Lax'
             ]);
             session_start();
-
-            Logger::info("Sessão iniciada", [
-                "save_path" => session_save_path(),
-                "session_id" => session_id(),
-                "tem_auth" => isset($_SESSION["auth"]),
-            ]);
         }
     }
 

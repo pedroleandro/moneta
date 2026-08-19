@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Controller;
+use App\Core\DatabaseSessionHandler;
 use App\Core\Email;
 use App\Core\Logger;
 use App\Core\Message;
@@ -358,6 +359,8 @@ class AuthController extends Controller
         $user->save();
 
         AuditLog::record(LogEvent::PASSWORD_CHANGED, $user->getId());
+
+        DatabaseSessionHandler::destroyAllForUser($user->getId());
 
         Auth::logout();
 
