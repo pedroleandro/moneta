@@ -29,6 +29,9 @@ $router->post("/reenviar-verificacao", "AuthController@resendVerification");
 $router->get("/entrar/google", "SocialAuthController@redirectToGoogle");
 $router->get("/entrar/google/callback", "SocialAuthController@handleGoogleCallback");
 
+$router->get("/entrar/facebook", "SocialAuthController@redirectToFacebook");
+$router->get("/entrar/facebook/callback", "SocialAuthController@handleFacebookCallback");
+
 $router->get("/cadastrar/confirmar-social", "SocialAuthController@confirmSocialSignup");
 $router->post("/cadastrar/confirmar-social", "SocialAuthController@storeSocialSignup");
 

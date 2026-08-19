@@ -12,6 +12,7 @@ use App\Core\SessionTimeoutMiddleware;
 use App\Models\SocialAccount;
 use App\Models\User;
 use JetBrains\PhpStorm\NoReturn;
+use League\OAuth2\Client\Provider\Facebook;
 use League\OAuth2\Client\Provider\Google;
 
 class SocialAuthController extends Controller
@@ -29,6 +30,20 @@ class SocialAuthController extends Controller
             "redirectUri" => url("/entrar/google/callback"),
         ]);
     }
+
+    private function facebookProvider(): Facebook
+    {
+        return new Facebook([
+            "clientId" => FACEBOOK_CLIENT_ID,
+            "clientSecret" => FACEBOOK_CLIENT_SECRET,
+            "redirectUri" => url("/entrar/facebook/callback"),
+            "graphApiVersion" => "v20.0",
+        ]);
+    }
+
+    // =========================================================
+    // GOOGLE
+    // =========================================================
 
     #[NoReturn]
     public function redirectToGoogle(): void
@@ -74,8 +89,6 @@ class SocialAuthController extends Controller
             $googleUser = $provider->getResourceOwner($token);
             $googleData = $googleUser->toArray();
 
-            Logger::info("Dados recebidos do Google", ["raw" => $googleData]);
-
             $providerId = (string)$googleUser->getId();
             $email = $googleData["email"] ?? null;
             $emailVerified = $googleData["email_verified"] ?? $googleData["verified_email"] ?? false;
@@ -89,13 +102,13 @@ class SocialAuthController extends Controller
             }
 
             if (!$emailVerified) {
-                Logger::warning("E-mail do Google não verificado", ["email" => $email, "raw" => $googleData]);
+                Logger::warning("E-mail do Google não verificado", ["email" => $email]);
                 Message::error("Seu e-mail do Google ainda não está verificado. Verifique-o e tente novamente.");
                 redirect("/entrar");
                 return;
             }
 
-            $this->loginOrRegister($providerId, $email, $name, $avatar, $token->getToken(), $token->getRefreshToken());
+            $this->loginOrRegister("google", $providerId, $email, $name, $avatar, $token->getToken(), $token->getRefreshToken());
 
         } catch (\Throwable $exception) {
             Logger::error("Falha na autenticação com Google", [
@@ -106,36 +119,111 @@ class SocialAuthController extends Controller
         }
     }
 
+    // =========================================================
+    // FACEBOOK
+    // =========================================================
+
+    #[NoReturn]
+    public function redirectToFacebook(): void
+    {
+        $provider = $this->facebookProvider();
+        $authUrl = $provider->getAuthorizationUrl([
+            "scope" => ["email"],
+            "auth_type" => "rerequest", // força pedir de novo o e-mail se a pessoa negou antes
+        ]);
+
+        $session = new Session();
+        $session->set("oauth2state", $provider->getState());
+
+        header("Location: " . $authUrl);
+        exit;
+    }
+
+    public function handleFacebookCallback(?array $data): void
+    {
+        $session = new Session();
+        $state = $_GET["state"] ?? $data["state"] ?? null;
+        $code = $_GET["code"] ?? $data["code"] ?? null;
+
+        if (!$state || $state !== $session->get("oauth2state")) {
+            Logger::warning("State do Facebook não confere", [
+                "recebido" => $state,
+                "esperado" => $session->get("oauth2state"),
+            ]);
+            Message::error("Sessão de login inválida. Tente novamente.");
+            redirect("/entrar");
+            return;
+        }
+
+        $session->unset("oauth2state");
+
+        $provider = $this->facebookProvider();
+
+        try {
+            $token = $provider->getAccessToken("authorization_code", [
+                "code" => $code,
+            ]);
+
+            $facebookUser = $provider->getResourceOwner($token);
+            $facebookData = $facebookUser->toArray();
+
+            $providerId = (string)$facebookUser->getId();
+            $email = $facebookData["email"] ?? null;
+            $name = $facebookData["name"] ?? "Usuário Facebook";
+            $avatar = $facebookUser->getPictureUrl();
+
+            if (!$email) {
+                Message::error(
+                    "Não foi possível obter um e-mail verificado da sua conta Facebook. " .
+                    "Verifique se seu e-mail está confirmado no Facebook e tente novamente."
+                );
+                redirect("/entrar");
+                return;
+            }
+
+            $this->loginOrRegister("facebook", $providerId, $email, $name, $avatar, $token->getToken(), $token->getRefreshToken());
+
+        } catch (\Throwable $exception) {
+            Logger::error("Falha na autenticação com Facebook", [
+                "exception" => $exception->getMessage(),
+            ]);
+            Message::error("Não foi possível entrar com o Facebook. Tente novamente.");
+            redirect("/entrar");
+        }
+    }
+
+    // =========================================================
+    // FLUXO COMUM (Google + Facebook)
+    // =========================================================
+
     private function loginOrRegister(
-        string  $providerId,
-        string  $email,
-        string  $name,
+        string $provider,
+        string $providerId,
+        string $email,
+        string $name,
         ?string $avatar,
         ?string $accessToken,
         ?string $refreshToken
-    ): void
-    {
-        $socialAccount = SocialAccount::findByProvider("google", $providerId);
+    ): void {
+        $socialAccount = SocialAccount::findByProvider($provider, $providerId);
 
         if ($socialAccount) {
             $user = (new User())->find($socialAccount->getUserId());
 
             if (!$user) {
+                // O vínculo social existe mas o usuário foi excluído do banco.
                 Message::error("Essa conta não existe mais. Faça um novo cadastro.");
                 redirect("/entrar");
                 return;
             }
 
-            $this->finishLogin($user, "google");
+            $this->finishLogin($user, $provider);
             return;
         }
 
         $user = User::findByEmail($email);
 
         if ($user) {
-            // Já existe conta tradicional com esse e-mail: não vincula
-            // automaticamente. A pessoa precisa entrar com a senha e
-            // vincular o Google manualmente no perfil (mais seguro).
             Message::error("Já existe uma conta com esse e-mail. Entre com sua senha para acessá-la.");
             redirect("/entrar");
             return;
@@ -143,7 +231,7 @@ class SocialAuthController extends Controller
 
         $session = new Session();
         $session->set("pending_social_signup", [
-            "provider" => "google",
+            "provider" => $provider,
             "provider_id" => $providerId,
             "email" => $email,
             "name" => $name,
@@ -244,12 +332,13 @@ class SocialAuthController extends Controller
         } catch (\Throwable $exception) {
             Logger::error("Falha ao criar conta via login social", [
                 "email" => $pending->email ?? null,
+                "provider" => $pending->provider ?? null,
                 "exception" => $exception->getMessage(),
             ]);
 
             $session->unset("pending_social_signup");
 
-            Message::error("Não foi possível criar sua conta. Tente entrar com o Google novamente.");
+            Message::error("Não foi possível criar sua conta. Tente entrar novamente.");
             redirect("/entrar");
         }
     }
