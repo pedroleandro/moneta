@@ -503,7 +503,24 @@ abstract class AbstractModel
         $instance->attributes = $data;
         $instance->exists = true;
 
+        $reflection = new \ReflectionClass($instance);
+
+        foreach ($data as $column => $value) {
+            $property = static::columnToProperty($column);
+
+            if ($reflection->hasProperty($property)) {
+                $reflectionProperty = $reflection->getProperty($property);
+                $reflectionProperty->setAccessible(true);
+                $reflectionProperty->setValue($instance, $value);
+            }
+        }
+
         return $instance;
+    }
+
+    private static function columnToProperty(string $column): string
+    {
+        return lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $column))));
     }
 
     protected function now(): string
