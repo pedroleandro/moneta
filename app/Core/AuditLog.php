@@ -11,7 +11,7 @@ class AuditLog
 
             $statement = $connection->prepare(
                 "INSERT INTO audit_logs (user_id, event, description, ip_address, user_agent, metadata, created_at)
-                 VALUES (:user_id, :event, :description, :ip_address, :user_agent, :metadata, NOW())"
+                 VALUES (:user_id, :event, :description, :ip_address, :user_agent, :metadata, :created_at)"
             );
 
             $statement->execute([
@@ -21,6 +21,7 @@ class AuditLog
                 "ip_address" => self::clientIp(),
                 "user_agent" => substr($_SERVER["HTTP_USER_AGENT"] ?? "", 0, 255),
                 "metadata" => $metadata ? json_encode($metadata) : null,
+                "created_at" => (new \DateTime("now", new \DateTimeZone("America/Sao_Paulo")))->format("Y-m-d H:i:s")
             ]);
         } catch (\Throwable $exception) {
             Logger::error("Falha ao registrar audit log", [
