@@ -9,6 +9,7 @@ use App\Core\Logger;
 use App\Core\Message;
 use App\Core\Session;
 use App\Core\SessionTimeoutMiddleware;
+use App\Core\Turnstile;
 use App\Models\SocialAccount;
 use App\Models\User;
 use JetBrains\PhpStorm\NoReturn;
@@ -46,8 +47,16 @@ class SocialAuthController extends Controller
     // =========================================================
 
     #[NoReturn]
-    public function redirectToGoogle(): void
+    public function redirectToGoogle(?array $data): void
     {
+        $this->validateCsrfToken($data, "/entrar");
+
+        if (!Turnstile::verify($data["cf-turnstile-response"] ?? null, $_SERVER["REMOTE_ADDR"] ?? null)) {
+            Message::error("Não foi possível confirmar que você não é um robô. Tente novamente.");
+            redirect("/entrar");
+            return;
+        }
+
         $provider = $this->googleProvider();
         $authUrl = $provider->getAuthorizationUrl([
             "scope" => ["email", "profile"],
@@ -124,8 +133,16 @@ class SocialAuthController extends Controller
     // =========================================================
 
     #[NoReturn]
-    public function redirectToFacebook(): void
+    public function redirectToFacebook(?array $data): void
     {
+        $this->validateCsrfToken($data, "/entrar");
+
+        if (!Turnstile::verify($data["cf-turnstile-response"] ?? null, $_SERVER["REMOTE_ADDR"] ?? null)) {
+            Message::error("Não foi possível confirmar que você não é um robô. Tente novamente.");
+            redirect("/entrar");
+            return;
+        }
+
         $provider = $this->facebookProvider();
         $authUrl = $provider->getAuthorizationUrl([
             "scope" => ["email"],

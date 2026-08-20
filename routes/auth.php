@@ -26,10 +26,10 @@ $router->post("/resetar-senha", "AuthController@updatePassword");
 $router->get("/verificar-email/{token}", "AuthController@verifyEmail");
 $router->post("/reenviar-verificacao", "AuthController@resendVerification");
 
-$router->get("/entrar/google", "SocialAuthController@redirectToGoogle");
+$router->post("/entrar/google", "SocialAuthController@redirectToGoogle");
 $router->get("/entrar/google/callback", "SocialAuthController@handleGoogleCallback");
 
-$router->get("/entrar/facebook", "SocialAuthController@redirectToFacebook");
+$router->post("/entrar/facebook", "SocialAuthController@redirectToFacebook");
 $router->get("/entrar/facebook/callback", "SocialAuthController@handleFacebookCallback");
 
 $router->get("/cadastrar/confirmar-social", "SocialAuthController@confirmSocialSignup");

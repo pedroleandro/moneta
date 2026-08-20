@@ -135,7 +135,9 @@
                              data-sitekey="<?= TURNSTILE_SITE_KEY ?>"
                              data-theme="light"
                              data-size="flexible"
-                             data-language="pt-BR">
+                             data-language="pt-BR"
+                             data-callback="onTurnstileVerified"
+                             data-expired-callback="onTurnstileExpired">
                         </div>
 
                         <button class="btn btn-primary d-grid w-100">Cadastrar</button>

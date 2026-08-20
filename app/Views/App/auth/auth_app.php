@@ -55,6 +55,7 @@
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
     <script src="<?= assets('/js/form-guard.js') ?>"></script>
+    <script src="<?= assets('/js/turnstile.js') ?>"></script>
 </head>
 
 <body>

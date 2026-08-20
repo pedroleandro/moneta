@@ -29,11 +29,5 @@ function csrf_verify(?string $token): bool
         return false;
     }
 
-    $valid = hash_equals($_SESSION['_csrf'], $token);
-
-    if ($valid) {
-        unset($_SESSION['_csrf']);
-    }
-
-    return $valid;
+    return hash_equals($_SESSION['_csrf'], $token);
 }

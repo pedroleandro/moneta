@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const submitBtn = form.querySelector('button[type="submit"]');
         if (!submitBtn) return;
 
-        const originalHTML = submitBtn.innerHTML;
+        submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+
         const requiredFields = form.querySelectorAll('[required]');
 
         function allFieldsFilled() {
@@ -20,7 +21,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return filled;
         }
 
-        // Desabilita o botão até todos os campos obrigatórios estarem preenchidos.
         if (requiredFields.length > 0) {
             submitBtn.disabled = !allFieldsFilled();
 
@@ -40,4 +40,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>';
         });
     });
+});
+
+window.addEventListener('pageshow', function (event) {
+    if (!event.persisted) return; // só age quando veio do bfcache
+
+    document.querySelectorAll('button[type="submit"]').forEach(function (submitBtn) {
+        if (submitBtn.dataset.originalHtml) {
+            submitBtn.innerHTML = submitBtn.dataset.originalHtml;
+        }
+
+        const form = submitBtn.closest('form');
+        const requiredFields = form ? form.querySelectorAll('[required]') : [];
+
+        if (requiredFields.length > 0) {
+            let filled = true;
+            requiredFields.forEach(function (field) {
+                if (field.type === 'checkbox') {
+                    if (!field.checked) filled = false;
+                } else if (!field.value.trim()) {
+                    filled = false;
+                }
+            });
+            submitBtn.disabled = !filled;
+        } else {
+            submitBtn.disabled = false;
+        }
+    });
+
+    if (window.turnstile) {
+        document.querySelectorAll('.cf-turnstile').forEach(function (widget) {
+            turnstile.reset(widget);
+        });
+    } else {
+        document.querySelectorAll('.turnstile-token-field').forEach(function (field) {
+            field.value = '';
+        });
+    }
 });
