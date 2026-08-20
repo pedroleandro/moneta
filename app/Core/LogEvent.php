@@ -30,6 +30,7 @@ final class LogEvent
 
     // Dados Financeiros Sensíveis
     public const BANK_ACCOUNT_CREATED = "bank_account_created";
+    public const BANK_ACCOUNT_UPDATED = "bank_account_updated";
     public const BANK_ACCOUNT_DELETED = "bank_account_deleted";
     public const CREDIT_CARD_CREATED = "credit_card_created";
     public const CREDIT_CARD_DELETED = "credit_card_deleted";
@@ -57,6 +58,7 @@ final class LogEvent
             self::SOCIAL_ACCOUNT_LINKED => "Conta social vinculada",
             self::SOCIAL_ACCOUNT_UNLINKED => "Conta social desvinculada",
             self::BANK_ACCOUNT_CREATED => "Conta bancária criada",
+            self::BANK_ACCOUNT_UPDATED => "Conta bancária atualizada",
             self::BANK_ACCOUNT_DELETED => "Conta bancária excluída",
             self::CREDIT_CARD_CREATED => "Cartão de crédito criado",
             self::CREDIT_CARD_DELETED => "Cartão de crédito excluído",

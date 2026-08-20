@@ -52,6 +52,11 @@
     <script src="<?= assets_sneat('/assets/js/config.js') ?>"></script>
 
     <link rel="stylesheet" href="<?= assets('/css/custom.css') ?>"/>
+
+    <script src="<?= assets('/js/color-icon-picker.js') ?>"></script>
+    <script src="<?= assets('/js/currency-mask.js') ?>"></script>
+    <script src="<?= assets('/js/delete-modal.js') ?>"></script>
+    <script src="<?= assets('/js/bank-search.js') ?>"></script>
 </head>
 
 <body>

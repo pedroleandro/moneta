@@ -30,6 +30,20 @@ class BankAccount extends AbstractModel
 
     protected bool $softDelete = true;
 
+    public const TYPE_CHECKING = "checking";
+    public const TYPE_SAVINGS = "savings";
+    public const TYPE_WALLET = "wallet";
+    public const TYPE_INVESTMENT = "investment";
+    public const TYPE_PAYMENT = "payment";
+
+    private const TYPES = [
+        self::TYPE_CHECKING,
+        self::TYPE_SAVINGS,
+        self::TYPE_WALLET,
+        self::TYPE_INVESTMENT,
+        self::TYPE_PAYMENT,
+    ];
+
     private ?int $id = null;
     private ?int $userId = null;
     private ?string $name = null;
@@ -43,8 +57,6 @@ class BankAccount extends AbstractModel
     private ?string $createdAt = null;
     private ?string $updatedAt = null;
     private ?string $deletedAt = null;
-
-    private const TYPES = ["corrente", "poupanca", "carteira", "investimento"];
 
     public function getId(): ?int
     {
@@ -97,10 +109,11 @@ class BankAccount extends AbstractModel
     public function getTypeLabel(): string
     {
         return match ($this->type) {
-            "corrente" => "Conta Corrente",
-            "poupanca" => "Poupança",
-            "carteira" => "Carteira",
-            "investimento" => "Investimento",
+            self::TYPE_CHECKING => "Conta Corrente",
+            self::TYPE_SAVINGS => "Poupança",
+            self::TYPE_WALLET => "Carteira",
+            self::TYPE_INVESTMENT => "Investimento",
+            self::TYPE_PAYMENT => "Conta de Pagamento",
             default => "-",
         };
     }
@@ -124,9 +137,6 @@ class BankAccount extends AbstractModel
         $this->initialBalance = $value;
         $this->attributes["initial_balance"] = $value;
 
-        // Na criação (ainda sem saldo definido), o saldo atual nasce
-        // igual ao inicial. Em contas já existentes, isso não roda de
-        // novo (o Controller só chama esse setter na criação).
         if ($this->currentBalance === null) {
             $this->currentBalance = $value;
             $this->attributes["current_balance"] = $value;
@@ -202,6 +212,17 @@ class BankAccount extends AbstractModel
         return $this->getUserId() === $userId;
     }
 
+    public static function typeOptions(): array
+    {
+        return [
+            self::TYPE_CHECKING => "Conta Corrente",
+            self::TYPE_SAVINGS => "Poupança",
+            self::TYPE_WALLET => "Carteira",
+            self::TYPE_INVESTMENT => "Investimento",
+            self::TYPE_PAYMENT => "Conta de Pagamento",
+        ];
+    }
+
     public static function findAllForUser(int $userId): array
     {
         $model = new static();
@@ -242,15 +263,18 @@ class BankAccount extends AbstractModel
     {
         $id = $this->getId();
 
-        $queries = [
-            "SELECT COUNT(*) AS total FROM transactions WHERE bank_account_id = :id",
-            "SELECT COUNT(*) AS total FROM recurrences WHERE bank_account_id = :id",
-            "SELECT COUNT(*) AS total FROM account_transfers WHERE from_account_id = :id OR to_account_id = :id",
+        $checks = [
+            ["sql" => "SELECT COUNT(*) AS total FROM transactions WHERE bank_account_id = :id", "params" => ["id" => $id]],
+            ["sql" => "SELECT COUNT(*) AS total FROM recurrences WHERE bank_account_id = :id", "params" => ["id" => $id]],
+            [
+                "sql" => "SELECT COUNT(*) AS total FROM account_transfers WHERE from_account_id = :from_id OR to_account_id = :to_id",
+                "params" => ["from_id" => $id, "to_id" => $id],
+            ],
         ];
 
-        foreach ($queries as $sql) {
-            $statement = $this->connection->prepare($sql);
-            $statement->execute(["id" => $id]);
+        foreach ($checks as $check) {
+            $statement = $this->connection->prepare($check["sql"]);
+            $statement->execute($check["params"]);
 
             if ((int)$statement->fetch()->total > 0) {
                 return true;
@@ -258,5 +282,19 @@ class BankAccount extends AbstractModel
         }
 
         return false;
+    }
+
+    public function adjustBalance(float $delta): void
+    {
+        $statement = $this->connection->prepare(
+            "UPDATE bank_accounts SET current_balance = current_balance + :delta WHERE id = :id"
+        );
+        $statement->execute(["delta" => $delta, "id" => $this->getId()]);
+    }
+
+    public function syncCurrentBalanceWithInitial(): void
+    {
+        $this->currentBalance = $this->initialBalance;
+        $this->attributes["current_balance"] = $this->initialBalance;
     }
 }

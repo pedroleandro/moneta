@@ -60,3 +60,29 @@
     background-color: #d4f1db !important;
     color: #1a7431 !important;
 }
+
+/* Bancos */
+
+.bank-search-results {
+    background-color: #fff;
+    border: 1px solid #d9dee3;
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.bank-search-results .list-group-item {
+    border: none;
+    border-bottom: 1px solid #f0f1f5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.bank-search-results .list-group-item:last-child {
+    border-bottom: none;
+}
+
+.bank-search-results .badge {
+    flex-shrink: 0;
+}

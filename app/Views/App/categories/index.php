@@ -36,7 +36,7 @@
                         <td>
                             <div class="d-flex align-items-center">
         <span class="rounded-circle me-2"
-              style="background-color: <?= htmlspecialchars($category->getColor() ?: '#6c757d') ?>; width: 25px; height: 25px; flex-shrink: 0;"></span>
+              style="background-color: <?= htmlspecialchars($category->getColor() ?: '#6c757d') ?>; width: 20px; height: 20px; flex-shrink: 0;"></span>
                                 <span><?= htmlspecialchars($category->getName()) ?></span>
                             </div>
                         </td>
