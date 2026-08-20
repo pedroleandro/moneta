@@ -1,3 +1,4 @@
+/* Auth */
 .btn-social {
     display: flex;
     align-items: center;
@@ -13,6 +14,7 @@
     color: #fff;
     border: none;
 }
+
 .btn-social-facebook:hover {
     background-color: #145dbf;
     color: #fff;
@@ -23,7 +25,38 @@
     color: #3c4043;
     border: 1px solid #dadce0;
 }
+
 .btn-social-google:hover {
     background-color: #f8f9fa;
     color: #3c4043;
+}
+
+/* Categorias */
+.btn-icon-soft-primary:hover {
+    background-color: rgba(105, 108, 255, 0.12) !important;
+    border-color: rgba(105, 108, 255, 0.3) !important;
+    color: #696cff !important;
+}
+
+.btn-icon-soft-danger:hover {
+    background-color: rgba(255, 62, 29, 0.12) !important;
+    border-color: rgba(255, 62, 29, 0.3) !important;
+    color: #ff3e1d !important;
+}
+
+/* Alert de sucesso */
+.alert-success {
+    background-color: #e3f6e8 !important;
+    border-color: #a8dfb5 !important;
+    color: #1a7431 !important;
+}
+
+.alert-success .btn-close {
+    filter: invert(28%) sepia(55%) saturate(1000%) hue-rotate(90deg) brightness(90%);
+}
+
+/* Badge de sucesso */
+.badge.bg-label-success {
+    background-color: #d4f1db !important;
+    color: #1a7431 !important;
 }

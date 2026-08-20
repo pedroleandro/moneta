@@ -34,6 +34,10 @@ final class LogEvent
     public const CREDIT_CARD_CREATED = "credit_card_created";
     public const CREDIT_CARD_DELETED = "credit_card_deleted";
 
+    public const CATEGORY_CREATED = "category_created";
+    public const CATEGORY_UPDATED = "category_updated";
+    public const CATEGORY_DELETED = "category_deleted";
+
     // Perfil
     public const PROFILE_UPDATED = "profile_updated";
 
@@ -57,6 +61,9 @@ final class LogEvent
             self::CREDIT_CARD_CREATED => "Cartão de crédito criado",
             self::CREDIT_CARD_DELETED => "Cartão de crédito excluído",
             self::PROFILE_UPDATED => "Perfil atualizado",
+            self::CATEGORY_CREATED => "Categoria criada",
+            self::CATEGORY_UPDATED => "Categoria atualizada",
+            self::CATEGORY_DELETED => "Categoria excluída",
             default => $event,
         };
     }
