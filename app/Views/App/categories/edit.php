@@ -48,7 +48,6 @@ $currentIcon = old('icon', $category->getIcon() ?: '');
                     </select>
                 </div>
 
-                <!-- Seletor de Cor -->
                 <div class="mb-6">
                     <label class="form-label">Cor</label>
                     <div class="d-flex align-items-center gap-3 mb-3">
@@ -68,7 +67,6 @@ $currentIcon = old('icon', $category->getIcon() ?: '');
                     </div>
                 </div>
 
-                <!-- Seletor de Ícone -->
                 <div class="mb-6">
                     <label class="form-label">Ícone <small class="text-body-secondary">(opcional)</small></label>
                     <div class="d-flex align-items-center gap-3 mb-3">
@@ -77,6 +75,7 @@ $currentIcon = old('icon', $category->getIcon() ?: '');
                             <i id="icon-preview" class="icon-base bx <?= $currentIcon ?: 'bx-category' ?> icon-md"></i>
                         </span>
                         <input type="text" class="form-control font-monospace" id="icon" name="icon"
+                               data-default-icon="bx-category"
                                value="<?= $currentIcon ?>" style="max-width: 220px;" placeholder="bx-cart"/>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
@@ -95,39 +94,3 @@ $currentIcon = old('icon', $category->getIcon() ?: '');
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const colorInput = document.getElementById('color');
-        const colorPreview = document.getElementById('color-preview');
-        const iconInput = document.getElementById('icon');
-        const iconPreview = document.getElementById('icon-preview');
-
-        document.querySelectorAll('.color-swatch-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                const color = btn.dataset.color;
-                colorInput.value = color;
-                colorPreview.style.backgroundColor = color;
-            });
-        });
-
-        colorInput.addEventListener('input', function () {
-            if (/^#[0-9A-Fa-f]{6}$/.test(colorInput.value)) {
-                colorPreview.style.backgroundColor = colorInput.value;
-            }
-        });
-
-        document.querySelectorAll('.icon-swatch-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                const icon = btn.dataset.icon;
-                iconInput.value = icon;
-                iconPreview.className = 'icon-base bx ' + icon + ' icon-md';
-            });
-        });
-
-        iconInput.addEventListener('input', function () {
-            const value = iconInput.value.trim() || 'bx-category';
-            iconPreview.className = 'icon-base bx ' + value + ' icon-md';
-        });
-    });
-</script>

@@ -35,8 +35,8 @@
                     <tr>
                         <td>
                             <div class="d-flex align-items-center">
-        <span class="rounded-circle me-2"
-              style="background-color: <?= htmlspecialchars($category->getColor() ?: '#6c757d') ?>; width: 20px; height: 20px; flex-shrink: 0;"></span>
+                                <span class="rounded-circle me-2"
+                                      style="background-color: <?= htmlspecialchars($category->getColor() ?: '#6c757d') ?>; width: 12px; height: 12px; flex-shrink: 0;"></span>
                                 <span><?= htmlspecialchars($category->getName()) ?></span>
                             </div>
                         </td>
@@ -78,7 +78,7 @@
 </div>
 
 <!-- Modal de confirmação de exclusão (compartilhado por todas as linhas) -->
-<div class="modal fade" id="modal-excluir-categoria" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modal-excluir-categoria" data-delete-modal tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -87,11 +87,11 @@
             </div>
             <div class="modal-body">
                 Tem certeza que deseja excluir a categoria
-                <strong id="modal-excluir-categoria-nome"></strong>? Essa ação não pode ser desfeita.
+                <strong data-delete-name></strong>? Essa ação não pode ser desfeita.
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form id="modal-excluir-categoria-form" method="post" action="">
+                <form method="post" action="">
                     <?= csrf_input() ?>
                     <button type="submit" class="btn btn-danger">Excluir</button>
                 </form>
@@ -99,18 +99,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const modal = document.getElementById('modal-excluir-categoria');
-
-        modal.addEventListener('show.bs.modal', function (event) {
-            const button = event.relatedTarget;
-            const action = button.getAttribute('data-action');
-            const name = button.getAttribute('data-name');
-
-            modal.querySelector('#modal-excluir-categoria-form').setAttribute('action', action);
-            modal.querySelector('#modal-excluir-categoria-nome').textContent = name;
-        });
-    });
-</script>
