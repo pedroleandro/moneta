@@ -17,8 +17,38 @@ class LoginAttempt extends AbstractModel
     ];
 
     protected bool $timestamps = true;
+    protected bool $softDelete = false;
 
-    protected bool $softDelete = true;
+    private ?int $id = null;
+    private ?string $email = null;
+    private ?string $ipAddress = null;
+    private ?int $successful = null;
+    private ?string $createdAt = null;
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function getIpAddress(): ?string
+    {
+        return $this->ipAddress;
+    }
+
+    public function isSuccessful(): bool
+    {
+        return (bool)$this->successful;
+    }
+
+    public function getCreatedAt(): ?string
+    {
+        return $this->createdAt;
+    }
 
     public static function register(string $email, ?string $ipAddress, bool $successful): void
     {
@@ -29,6 +59,9 @@ class LoginAttempt extends AbstractModel
         ])->save();
     }
 
+    /**
+     * @throws \Exception
+     */
     public static function recentFailedCount(string $email, int $minutes): int
     {
         $since = (new \DateTimeImmutable("now", new \DateTimeZone(APP_TIMEZONE)))
@@ -42,6 +75,9 @@ class LoginAttempt extends AbstractModel
             ->count();
     }
 
+    /**
+     * @throws \Exception
+     */
     public static function isLocked(string $email): bool
     {
         return self::recentFailedCount($email, AUTH_LOCKOUT_MINUTES) >= AUTH_MAX_ATTEMPTS;

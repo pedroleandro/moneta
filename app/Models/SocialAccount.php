@@ -28,39 +28,89 @@ class SocialAccount extends AbstractModel
 
     protected bool $softDelete = true;
 
+    private ?int $id = null;
+    private ?int $userId = null;
+    private ?string $provider = null;
+    private ?string $providerId = null;
+    private ?string $accessToken = null;
+    private ?string $refreshToken = null;
+    private ?string $createdAt = null;
+    private ?string $updatedAt = null;
+    private ?string $deletedAt = null;
+
     public function getId(): ?int
     {
-        return isset($this->attributes["id"]) ? (int)$this->attributes["id"] : null;
+        return $this->id;
     }
 
     public function setUserId(int $userId): void
     {
+        $this->userId = $userId;
         $this->attributes["user_id"] = $userId;
     }
 
     public function getUserId(): ?int
     {
-        return isset($this->attributes["user_id"]) ? (int)$this->attributes["user_id"] : null;
+        return $this->userId;
     }
 
     public function setProvider(string $provider): void
     {
+        $this->provider = $provider;
         $this->attributes["provider"] = $provider;
+    }
+
+    public function getProvider(): ?string
+    {
+        return $this->provider;
     }
 
     public function setProviderId(string $providerId): void
     {
+        $this->providerId = $providerId;
         $this->attributes["provider_id"] = $providerId;
+    }
+
+    public function getProviderId(): ?string
+    {
+        return $this->providerId;
     }
 
     public function setAccessToken(?string $token): void
     {
+        $this->accessToken = $token;
         $this->attributes["access_token"] = $token;
+    }
+
+    public function getAccessToken(): ?string
+    {
+        return $this->accessToken;
     }
 
     public function setRefreshToken(?string $token): void
     {
+        $this->refreshToken = $token;
         $this->attributes["refresh_token"] = $token;
+    }
+
+    public function getRefreshToken(): ?string
+    {
+        return $this->refreshToken;
+    }
+
+    public function getCreatedAt(): ?string
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt(): ?string
+    {
+        return $this->updatedAt;
+    }
+
+    public function getDeletedAt(): ?string
+    {
+        return $this->deletedAt;
     }
 
     public static function findByProvider(string $provider, string $providerId): ?self
