@@ -10,6 +10,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (form && action) form.setAttribute('action', action);
             if (nameEl && name) nameEl.textContent = name;
+
+            const extraField = modal.getAttribute('data-extra-field');
+            const extraValue = button.getAttribute('data-extra-id');
+            const extraInput = modal.querySelector('[data-extra-value]');
+
+            if (extraField && extraInput && extraValue !== null) {
+                extraInput.value = extraValue;
+            }
         });
     });
 });

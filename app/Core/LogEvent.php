@@ -41,7 +41,7 @@ final class LogEvent
     public const CREDIT_CARD_UPDATED = "credit_card_updated";
     public const CREDIT_CARD_DELETED = "credit_card_deleted";
 
-    // Quem Usa Meu Cartão
+    // Quem Paga Meu Cartão
     public const CARD_USER_CREATED = "card_user_created";
     public const CARD_USER_UPDATED = "card_user_updated";
     public const CARD_USER_DELETED = "card_user_deleted";
@@ -95,7 +95,7 @@ final class LogEvent
             self::CREDIT_CARD_UPDATED => "Cartão de crédito atualizado",
             self::CREDIT_CARD_DELETED => "Cartão de crédito excluído",
 
-            // Quem usa meu cartão
+            // Quem Paga Comigo
             self::CARD_USER_CREATED => "Pessoa adicionada ao cartão",
             self::CARD_USER_UPDATED => "Pessoa do cartão atualizada",
             self::CARD_USER_DELETED => "Pessoa removida do cartão",

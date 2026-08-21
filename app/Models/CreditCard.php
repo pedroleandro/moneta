@@ -230,13 +230,14 @@ class CreditCard extends AbstractModel
         $queries = [
             "SELECT COUNT(*) AS total FROM transactions WHERE credit_card_id = :id",
             "SELECT COUNT(*) AS total FROM card_invoices WHERE credit_card_id = :id",
-            "SELECT COUNT(*) AS total FROM card_users WHERE credit_card_id = :id",
+            "SELECT COUNT(*) AS total FROM card_user_credit_cards WHERE credit_card_id = :id",
             "SELECT COUNT(*) AS total FROM installment_purchases WHERE credit_card_id = :id",
             "SELECT COUNT(*) AS total FROM recurrences WHERE credit_card_id = :id",
         ];
 
         foreach ($queries as $sql) {
             $statement = $this->connection->prepare($sql);
+
             $statement->execute(["id" => $id]);
 
             if ((int)$statement->fetch()->total > 0) {

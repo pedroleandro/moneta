@@ -1,11 +1,11 @@
 <?= $this->layout("layouts/app_layout", [
-        "title" => $title ?? "Quem Usa Meu Cartão | " . APP_NAME,
+        "title" => $title ?? "Quem Paga Comigo | " . APP_NAME,
         "active" => "pessoas-cartao",
 ]) ?>
 
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="d-flex justify-content-between align-items-center mb-6">
-        <h4 class="mb-0">Quem Usa Meu Cartão</h4>
+        <h4 class="mb-0">Quem Paga Comigo</h4>
         <a href="<?= url('/pessoas-cartao/nova') ?>" class="btn btn-primary">
             <i class="icon-base bx bx-plus me-1"></i> Nova Pessoa
         </a>

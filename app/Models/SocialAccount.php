@@ -120,4 +120,36 @@ class SocialAccount extends AbstractModel
             ->where("provider_id", "=", $providerId)
             ->first();
     }
+
+    public static function findAllForUser(int $userId): array
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT * FROM social_accounts WHERE user_id = :user_id AND deleted_at IS NULL"
+        );
+        $statement->execute(["user_id" => $userId]);
+
+        $results = [];
+
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $results[] = static::hydrate($row);
+        }
+
+        return $results;
+    }
+
+    public static function findByIdForUser(int $id, int $userId): ?self
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT * FROM social_accounts WHERE id = :id AND user_id = :user_id AND deleted_at IS NULL LIMIT 1"
+        );
+        $statement->execute(["id" => $id, "user_id" => $userId]);
+
+        $row = $statement->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ? static::hydrate($row) : null;
+    }
 }

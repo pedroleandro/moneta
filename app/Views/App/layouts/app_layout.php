@@ -53,11 +53,14 @@
 
     <link rel="stylesheet" href="<?= assets('/css/custom.css') ?>"/>
 
+    <script src="<?= assets('/js/form-guard.js') ?>"></script>
     <script src="<?= assets('/js/color-icon-picker.js') ?>"></script>
     <script src="<?= assets('/js/currency-mask.js') ?>"></script>
     <script src="<?= assets('/js/delete-modal.js') ?>"></script>
     <script src="<?= assets('/js/bank-search.js') ?>"></script>
     <script src="<?= assets('/js/phone-mask.js') ?>"></script>
+    <script src="<?= assets('/js/cpf-mask.js') ?>"></script>
+    <script src="<?= assets('/js/cep-lookup.js') ?>"></script>
 </head>
 
 <body>
@@ -222,7 +225,7 @@
                 <li class="menu-item <?= ($active ?? '') === 'pessoas-cartao' ? 'active' : '' ?>">
                     <a href="<?= url('/pessoas-cartao') ?>" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-group"></i>
-                        <div class="text-truncate">Quem Usa Meu Cartão</div>
+                        <div class="text-truncate">Quem Paga Comigo</div>
                     </a>
                 </li>
 
@@ -321,7 +324,7 @@
                                     <div class="dropdown-divider my-1"></div>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="#">
+                                    <a class="dropdown-item" href="<?= url('/perfil') ?>">
                                         <i class="icon-base bx bx-user icon-md me-3"></i><span>Perfil</span>
                                     </a>
                                 </li>

@@ -26,7 +26,7 @@ class CardUserController extends Controller
             $cardUsers = CardUser::findAllForUser($userId);
 
             echo $this->view->render("people_card/index", [
-                "title" => "Quem Usa Meu Cartão | " . APP_NAME,
+                "title" => "Quem Paga Comigo | " . APP_NAME,
                 "active" => "pessoas-cartao",
                 "cardUsers" => $cardUsers,
             ]);

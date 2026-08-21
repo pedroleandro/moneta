@@ -237,6 +237,7 @@ class CreditCardController extends Controller
             Message::success("Cartão excluído com sucesso.");
             redirect("/cartoes");
         } catch (\Throwable $exception) {
+
             Logger::error("Falha ao excluir cartão de crédito", [
                 "user_id" => $userId,
                 "card_id" => $id,
