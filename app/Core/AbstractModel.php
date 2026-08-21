@@ -130,6 +130,8 @@ abstract class AbstractModel
                 }
 
                 $this->exists = true;
+
+                $this->syncPropertyFromAttribute($this->primaryKey);
             }
 
             return $success;
@@ -539,5 +541,23 @@ abstract class AbstractModel
         } else {
             $sql .= " AND deleted_at IS NULL";
         }
+    }
+
+    protected function syncPropertyFromAttribute(string $column): void
+    {
+        if (!array_key_exists($column, $this->attributes)) {
+            return;
+        }
+
+        $property = static::columnToProperty($column);
+        $reflection = new \ReflectionClass($this);
+
+        if (!$reflection->hasProperty($property)) {
+            return;
+        }
+
+        $reflectionProperty = $reflection->getProperty($property);
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue($this, $this->attributes[$column]);
     }
 }

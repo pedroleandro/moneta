@@ -86,3 +86,10 @@
 .bank-search-results .badge {
     flex-shrink: 0;
 }
+
+/* Pessoas que usam meu cartão */
+.btn-icon-soft-success:hover {
+    background-color: rgba(40, 199, 111, 0.12) !important;
+    border-color: rgba(40, 199, 111, 0.3) !important;
+    color: #28c76f !important;
+}

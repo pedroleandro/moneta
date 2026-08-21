@@ -57,6 +57,7 @@
     <script src="<?= assets('/js/currency-mask.js') ?>"></script>
     <script src="<?= assets('/js/delete-modal.js') ?>"></script>
     <script src="<?= assets('/js/bank-search.js') ?>"></script>
+    <script src="<?= assets('/js/phone-mask.js') ?>"></script>
 </head>
 
 <body>
