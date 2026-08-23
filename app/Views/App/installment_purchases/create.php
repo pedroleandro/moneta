@@ -1,5 +1,8 @@
 <?php
 $oldSplitPersonIds = old('split_card_user_id', []);
+if (!is_array($oldSplitPersonIds)) {
+    $oldSplitPersonIds = [];
+}
 $oldSplitAmounts = old('split_amount', []);
 ?>
 <?= $this->layout("layouts/app_layout", [
@@ -21,7 +24,8 @@ $oldSplitAmounts = old('split_amount', []);
                     <div class="col-md-6 mb-6">
                         <label for="credit_card_id" class="form-label">Cartão</label>
                         <select class="form-select" id="credit_card_id" name="credit_card_id" required>
-                            <option value="" disabled <?= old('credit_card_id') ? '' : 'selected' ?>>Selecione...</option>
+                            <option value="" disabled <?= old('credit_card_id') ? '' : 'selected' ?>>Selecione...
+                            </option>
                             <?php foreach ($cards as $card): ?>
                                 <option value="<?= $card->getId() ?>"
                                         <?= (string)old('credit_card_id') === (string)$card->getId() ? 'selected' : '' ?>>
@@ -56,7 +60,8 @@ $oldSplitAmounts = old('split_amount', []);
                         <label for="total_amount_display" class="form-label">Valor Total</label>
                         <input type="text" class="form-control currency-mask" id="total_amount_display"
                                data-target="#total_amount" inputmode="numeric" placeholder="R$ 0,00" required/>
-                        <input type="hidden" id="total_amount" name="total_amount" value="<?= old('total_amount', '0.00') ?>"/>
+                        <input type="hidden" id="total_amount" name="total_amount"
+                               value="<?= old('total_amount', '0.00') ?>"/>
                     </div>
 
                     <div class="col-md-4 mb-6">
@@ -70,7 +75,8 @@ $oldSplitAmounts = old('split_amount', []);
                         <label for="purchase_date" class="form-label">Data da Compra</label>
                         <input type="date" class="form-control" id="purchase_date"
                                name="purchase_date" value="<?= old('purchase_date', date('Y-m-d')) ?>" required/>
-                        <small class="text-body-secondary">A 1ª parcela cai no vencimento da fatura correspondente.</small>
+                        <small class="text-body-secondary">A 1ª parcela cai no vencimento da fatura
+                            correspondente.</small>
                     </div>
                 </div>
 
@@ -85,7 +91,8 @@ $oldSplitAmounts = old('split_amount', []);
                 <hr class="my-6"/>
 
                 <label class="form-label d-block mb-3">
-                    Dividir com pessoas <small class="text-body-secondary">(opcional — aplicado proporcionalmente em cada parcela)</small>
+                    Dividir com pessoas <small class="text-body-secondary">(opcional — aplicado proporcionalmente em
+                        cada parcela)</small>
                 </label>
 
                 <div id="splits-container">
@@ -110,7 +117,8 @@ $oldSplitAmounts = old('split_amount', []);
                                     <input type="hidden" name="split_amount[]" class="split-amount-hidden"
                                            value="<?= htmlspecialchars($oldSplitAmounts[$index] ?? '0.00') ?>"/>
                                 </div>
-                                <button type="button" class="btn btn-icon btn-outline-danger remove-split-row flex-shrink-0">
+                                <button type="button"
+                                        class="btn btn-icon btn-outline-danger remove-split-row flex-shrink-0">
                                     <i class="icon-base bx bx-x"></i>
                                 </button>
                             </div>
@@ -118,13 +126,15 @@ $oldSplitAmounts = old('split_amount', []);
                     <?php endforeach; ?>
                 </div>
 
-                <button type="button" id="add-split-btn" class="btn btn-sm btn-outline-primary mb-6">
-                    <i class="icon-base bx bx-plus"></i> Adicionar pessoa
-                </button>
+                <div class="mb-6">
+                    <button type="button" id="add-split-btn" class="btn btn-sm btn-outline-primary">
+                        <i class="icon-base bx bx-plus"></i> Adicionar pessoa
+                    </button>
+                </div>
 
                 <template id="split-row-template">
-                    <div class="split-row mb-3 p-3 border rounded">
-                        <div class="mb-2">
+                    <div class="row split-row mb-3 align-items-center gx-2">
+                        <div class="col-12 col-md-6 mb-2 mb-md-0">
                             <select class="form-select" name="split_card_user_id[]">
                                 <option value="">Selecione a pessoa...</option>
                                 <?php foreach ($cardUsers as $cardUser): ?>
@@ -135,13 +145,13 @@ $oldSplitAmounts = old('split_amount', []);
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="flex-grow-1">
-                                <input type="text" class="form-control currency-mask split-amount-display"
-                                       inputmode="numeric" placeholder="R$ 0,00"/>
-                                <input type="hidden" name="split_amount[]" class="split-amount-hidden" value="0.00"/>
-                            </div>
-                            <button type="button" class="btn btn-icon btn-outline-danger remove-split-row flex-shrink-0">
+                        <div class="col-9 col-md-5">
+                            <input type="text" class="form-control currency-mask split-amount-display"
+                                   inputmode="numeric" placeholder="R$ 0,00"/>
+                            <input type="hidden" name="split_amount[]" class="split-amount-hidden" value="0.00"/>
+                        </div>
+                        <div class="col-3 col-md-1">
+                            <button type="button" class="btn btn-icon btn-outline-danger remove-split-row w-100">
                                 <i class="icon-base bx bx-x"></i>
                             </button>
                         </div>

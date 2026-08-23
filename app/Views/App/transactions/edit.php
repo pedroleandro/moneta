@@ -125,7 +125,7 @@
                     $oldSplitPersonIds = old('split_card_user_id', null);
                     $oldSplitAmounts = old('split_amount', []);
 
-                    if ($oldSplitPersonIds === null) {
+                    if (!is_array($oldSplitPersonIds)) {
                         $oldSplitPersonIds = array_map(fn($s) => $s->getCardUserId(), $splits);
                         $oldSplitAmounts = array_map(fn($s) => $s->getAmount(), $splits);
                     }
@@ -166,8 +166,8 @@
                     </button>
 
                     <template id="split-row-template">
-                        <div class="row split-row mb-3 align-items-center">
-                            <div class="col-md-6">
+                        <div class="row split-row mb-3 align-items-center gx-2">
+                            <div class="col-12 col-md-6 mb-2 mb-md-0">
                                 <select class="form-select" name="split_card_user_id[]">
                                     <option value="">Selecione a pessoa...</option>
                                     <?php foreach ($cardUsers as $cardUser): ?>
@@ -178,13 +178,13 @@
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="col-md-5">
+                            <div class="col-9 col-md-5">
                                 <input type="text" class="form-control currency-mask split-amount-display"
                                        inputmode="numeric" placeholder="R$ 0,00"/>
                                 <input type="hidden" name="split_amount[]" class="split-amount-hidden" value="0.00"/>
                             </div>
-                            <div class="col-md-1">
-                                <button type="button" class="btn btn-icon btn-outline-danger remove-split-row">
+                            <div class="col-3 col-md-1">
+                                <button type="button" class="btn btn-icon btn-outline-danger remove-split-row w-100">
                                     <i class="icon-base bx bx-x"></i>
                                 </button>
                             </div>
