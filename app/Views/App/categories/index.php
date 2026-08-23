@@ -14,7 +14,7 @@
     <?= \App\Core\Message::render() ?>
 
     <div class="card">
-        <div class="table-responsive text-nowrap">
+        <div class="table-responsive table-responsive-mobile text-nowrap">
             <table class="table">
                 <thead>
                 <tr>
@@ -26,35 +26,35 @@
                 </thead>
                 <tbody>
                 <?php if (empty($categories)): ?>
-                    <tr>
+                    <tr class="table-empty-row">
                         <td colspan="4" class="text-center py-6">Nenhuma categoria cadastrada ainda.</td>
                     </tr>
                 <?php endif; ?>
 
                 <?php foreach ($categories as $category): ?>
                     <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
+                        <td data-label="Nome">
+                            <div class="d-flex align-items-center justify-content-end justify-content-md-start">
                                 <span class="rounded-circle me-2"
                                       style="background-color: <?= htmlspecialchars($category->getColor() ?: '#6c757d') ?>; width: 12px; height: 12px; flex-shrink: 0;"></span>
                                 <span><?= htmlspecialchars($category->getName()) ?></span>
                             </div>
                         </td>
-                        <td>
+                        <td data-label="Tipo">
                             <?php if ($category->getType() === 'receita'): ?>
                                 <span class="badge bg-label-success">Receita</span>
                             <?php else: ?>
                                 <span class="badge bg-label-danger">Despesa</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Origem">
                             <?php if ($category->isSystemDefault()): ?>
                                 <span class="badge bg-label-secondary">Padrão do sistema</span>
                             <?php else: ?>
                                 <span class="badge bg-label-primary">Minha categoria</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-end">
+                        <td data-label="Ações" class="text-end">
                             <?php if (!$category->isSystemDefault()): ?>
                                 <a href="<?= url('/categorias/' . $category->getId() . '/editar') ?>"
                                    class="btn btn-icon btn-outline-secondary btn-icon-soft-primary me-1" title="Editar">
@@ -67,6 +67,8 @@
                                         data-name="<?= htmlspecialchars($category->getName()) ?>">
                                     <i class="icon-base bx bx-trash"></i>
                                 </button>
+                            <?php else: ?>
+                                <span class="text-body-secondary">—</span>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -77,7 +79,6 @@
     </div>
 </div>
 
-<!-- Modal de confirmação de exclusão (compartilhado por todas as linhas) -->
 <div class="modal fade" id="modal-excluir-categoria" data-delete-modal tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
