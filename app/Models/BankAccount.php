@@ -297,4 +297,18 @@ class BankAccount extends AbstractModel
         $this->currentBalance = $this->initialBalance;
         $this->attributes["current_balance"] = $this->initialBalance;
     }
+
+    public static function getTotalBalanceForUser(int $userId): float
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT COALESCE(SUM(current_balance), 0) AS total
+             FROM bank_accounts
+             WHERE user_id = :user_id AND is_active = 1 AND deleted_at IS NULL"
+        );
+        $statement->execute(["user_id" => $userId]);
+
+        return (float)$statement->fetch()->total;
+    }
 }
