@@ -1,4 +1,113 @@
 /* Identificação Visual do Moneta */
+
+/* ===================================================================
+   O Bootstrap compilado do Sneat GRAVA o roxo LITERAL dentro de
+   variáveis próprias de 3 componentes (--bs-btn-bg, --bs-btn-*,
+   --bs-progress-bar-bg) — essas não herdam de --bs-primary, então a
+   sobrescrita geral no :root não alcança elas. Preciso sobrescrever
+   essas variáveis locais, no mesmo seletor, pra vencer por ordem de
+   carregamento (esse arquivo carrega depois do core.css).
+   =================================================================== */
+
+.btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #0D3B36;
+    --bs-btn-border-color: #0D3B36;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #08211E;
+    --bs-btn-hover-border-color: #08211E;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #08211E;
+    --bs-btn-active-border-color: #08211E;
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: #0D3B36;
+    --bs-btn-disabled-border-color: #0D3B36;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: #0D3B36;
+    --bs-btn-border-color: #0D3B36;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #0D3B36;
+    --bs-btn-hover-border-color: #0D3B36;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #0D3B36;
+    --bs-btn-active-border-color: #0D3B36;
+    --bs-btn-disabled-color: #0D3B36;
+    --bs-btn-disabled-border-color: #0D3B36;
+}
+
+.progress,
+.progress-stacked {
+    --bs-progress-bar-bg: #0D3B36;
+}
+
+/* ===================================================================
+   Sobrescrita das variáveis de cor primária do Bootstrap 5 (base do
+   Sneat) — isso troca o roxo padrão por verde-petróleo em TUDO que
+   usa a cor primária internamente: abas ativas, foco de campo,
+   spinners, bordas, dropdown, checkbox, radio, progress bar, etc.
+   Não precisa mais caçar seletor por seletor.
+   =================================================================== */
+
+:root,
+[data-bs-theme="light"] {
+    /* Cor primária base (verde-petróleo da marca) */
+    --bs-primary: #0D3B36;
+    --bs-primary-rgb: 13, 59, 54;
+
+    /* Variações que o Bootstrap deriva automaticamente da primária */
+    --bs-primary-text-emphasis: #082220;
+    --bs-primary-bg-subtle: #d6e3e1;
+    --bs-primary-border-subtle: #a8c4c0;
+
+    /* Links */
+    --bs-link-color: #0D3B36;
+    --bs-link-color-rgb: 13, 59, 54;
+    --bs-link-hover-color: #08211E;
+    --bs-link-hover-color-rgb: 8, 33, 30;
+
+    /* Foco de campo (aquele contorno azul/roxo ao clicar num input) */
+    --bs-focus-ring-color: rgba(13, 59, 54, 0.25);
+
+    /* Abas / pills ativas (nav-pills, nav-tabs) */
+    --bs-nav-pills-link-active-bg: #0D3B36;
+    --bs-nav-link-color: #0D3B36;
+    --bs-nav-link-hover-color: #08211E;
+
+    /* Checkbox, radio, switch marcados */
+    --bs-form-check-input-checked-bg-color: #0D3B36;
+    --bs-form-check-input-checked-border-color: #0D3B36;
+    --bs-form-check-input-focus-border-color: #0D3B36;
+
+    /* Barra de progresso */
+    --bs-progress-bar-bg: #0D3B36;
+
+    /* Spinner (aquele de carregamento do form-guard.js) */
+    --bs-spinner-color: #0D3B36;
+}
+
+/* O Sneat também define variáveis PRÓPRIAS (fora do padrão --bs-*)
+   em alguns componentes específicos do tema — essas cobrem os casos
+   que a sobrescrita do Bootstrap acima não alcança. */
+:root {
+    --primary: #0D3B36;
+}
+
+/* Cobertura extra pra casos residuais que usam cor fixa em vez de
+   variável (alguns estados de foco e abas do Sneat). */
+.form-control:focus,
+.form-select:focus {
+    border-color: #0D3B36 !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 59, 54, 0.15) !important;
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+    background-color: #0D3B36 !important;
+    color: #fff !important;
+}
+
 :root {
     /* Cores da marca Moneta */
     --moneta-primary: #0D3B36;          /* verde-petróleo escuro */
@@ -43,6 +152,12 @@
 .menu-vertical .menu-link.active,
 .menu-vertical .menu-item.active > .menu-link {
     background-color: var(--moneta-primary) !important;
+    color: #fff !important;
+}
+
+.menu-vertical .menu-link.active i,
+.menu-vertical .menu-item.active > .menu-link i {
+    color: #fff !important;
 }
 
 /* Dourado como cor de destaque secundária */
@@ -238,5 +353,21 @@ a:hover {
 
     .table-responsive-mobile tbody tr td[data-label="Ações"]::before {
         content: none;
+    }
+
+    /* Perfil */
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
+
+    .nav-tabs .nav-item {
+        flex-shrink: 0;
+    }
+
+    .nav-tabs::-webkit-scrollbar {
+        display: none;
     }
 }
