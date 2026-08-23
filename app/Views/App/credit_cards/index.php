@@ -20,6 +20,7 @@
                 <tr>
                     <th>Nome</th>
                     <th class="text-end">Limite</th>
+                    <th class="text-end">Disponível</th>
                     <th class="text-center">Fechamento</th>
                     <th class="text-center">Vencimento</th>
                     <th>Status</th>
@@ -29,7 +30,7 @@
                 <tbody>
                 <?php if (empty($cards)): ?>
                     <tr>
-                        <td colspan="6" class="text-center py-6">Nenhum cartão cadastrado ainda.</td>
+                        <td colspan="7" class="text-center py-6">Nenhum cartão cadastrado ainda.</td>
                     </tr>
                 <?php endif; ?>
 
@@ -44,6 +45,9 @@
                         </td>
                         <td class="text-end">
                             R$ <?= number_format($card->getCardLimit() ?? 0, 2, ',', '.') ?>
+                        </td>
+                        <td class="text-end">
+                            R$ <?= number_format($card->getAvailableLimit(), 2, ',', '.') ?>
                         </td>
                         <td class="text-center">Dia <?= $card->getClosingDay() ?></td>
                         <td class="text-center">Dia <?= $card->getDueDay() ?></td>
