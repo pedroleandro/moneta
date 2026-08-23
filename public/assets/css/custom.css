@@ -1,3 +1,80 @@
+/* Identificação Visual do Moneta */
+:root {
+    /* Cores da marca Moneta */
+    --moneta-primary: #0D3B36;          /* verde-petróleo escuro */
+    --moneta-primary-dark: #08211E;     /* variação mais escura, hover/active */
+    --moneta-primary-light: #E8F0EF;    /* fundo suave, tags, hover discreto */
+    --moneta-accent: #C9974E;           /* dourado — destaque */
+    --moneta-accent-dark: #A97C38;      /* dourado escuro, hover */
+    --moneta-accent-light: #FBF3E7;     /* fundo suave dourado */
+}
+
+/* Sobrescreve a cor primária do Bootstrap/Sneat (padrão roxo #696cff) */
+.btn-primary {
+    background-color: var(--moneta-primary) !important;
+    border-color: var(--moneta-primary) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--moneta-primary-dark) !important;
+    border-color: var(--moneta-primary-dark) !important;
+}
+
+.btn-outline-primary {
+    color: var(--moneta-primary) !important;
+    border-color: var(--moneta-primary) !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--moneta-primary) !important;
+    border-color: var(--moneta-primary) !important;
+}
+
+.text-primary {
+    color: var(--moneta-primary) !important;
+}
+
+.badge.bg-label-primary {
+    background-color: var(--moneta-primary-light) !important;
+    color: var(--moneta-primary) !important;
+}
+
+.menu-vertical .menu-link.active,
+.menu-vertical .menu-item.active > .menu-link {
+    background-color: var(--moneta-primary) !important;
+}
+
+/* Dourado como cor de destaque secundária */
+.btn-accent {
+    background-color: var(--moneta-accent) !important;
+    border-color: var(--moneta-accent) !important;
+    color: #fff !important;
+}
+
+.btn-accent:hover {
+    background-color: var(--moneta-accent-dark) !important;
+    border-color: var(--moneta-accent-dark) !important;
+}
+
+.badge.bg-label-accent {
+    background-color: var(--moneta-accent-light) !important;
+    color: var(--moneta-accent-dark) !important;
+}
+
+.text-accent {
+    color: var(--moneta-accent) !important;
+}
+
+/* Links e elementos de destaque discreto */
+a {
+    color: var(--moneta-primary);
+}
+
+a:hover {
+    color: var(--moneta-primary-dark);
+}
+
 /* Auth */
 .btn-social {
     display: flex;
@@ -92,4 +169,74 @@
     background-color: rgba(40, 199, 111, 0.12) !important;
     border-color: rgba(40, 199, 111, 0.3) !important;
     color: #28c76f !important;
+}
+
+/* Responsividade */
+
+@media (max-width: 767.98px) {
+    .table-responsive-mobile table,
+    .table-responsive-mobile thead,
+    .table-responsive-mobile tbody,
+    .table-responsive-mobile th,
+    .table-responsive-mobile td,
+    .table-responsive-mobile tr {
+        display: block;
+    }
+
+    .table-responsive-mobile thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .table-responsive-mobile tbody tr {
+        margin-bottom: 1rem;
+        border: 1px solid #e7e7e7;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        background-color: #fff;
+    }
+
+    .table-responsive-mobile tbody tr td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: right;
+        padding: 0.5rem 0;
+        border: none;
+        border-bottom: 1px solid #f3f3f3;
+    }
+
+    .table-responsive-mobile tbody tr td:last-child {
+        border-bottom: none;
+    }
+
+    .table-responsive-mobile tbody tr td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-align: left;
+        color: #6c757d;
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        margin-right: 1rem;
+        white-space: nowrap;
+    }
+
+    .table-responsive-mobile tbody tr.table-empty-row td {
+        display: block;
+        text-align: center;
+    }
+
+    .table-responsive-mobile tbody tr.table-empty-row td::before {
+        content: none;
+    }
+
+    .table-responsive-mobile tbody tr td[data-label="Ações"] {
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+
+    .table-responsive-mobile tbody tr td[data-label="Ações"]::before {
+        content: none;
+    }
 }
