@@ -30,16 +30,21 @@ class CardInvoiceController extends Controller
             $userId = Auth::user()->id;
             $cards = CreditCard::findAllForUser($userId);
 
-            $selectedCardId = !empty($_GET["cartao"]) ? (int)$_GET["cartao"] : ($cards[0]->getId() ?? null);
-            $invoices = [];
-
-            if ($selectedCardId) {
-                $card = CreditCard::findByIdForUser($selectedCardId, $userId);
-
-                if ($card) {
-                    $invoices = CardInvoice::findAllForCard($selectedCardId);
-                }
+            if (empty($cards)) {
+                echo $this->view->render("card_invoices/index", [
+                    "title" => "Faturas | " . APP_NAME,
+                    "active" => "faturas",
+                    "cards" => [],
+                    "invoices" => [],
+                    "selectedCardId" => null,
+                ]);
+                return;
             }
+
+            $selectedCardId = !empty($_GET["cartao"]) ? (int)$_GET["cartao"] : $cards[0]->getId();
+
+            $card = CreditCard::findByIdForUser($selectedCardId, $userId);
+            $invoices = $card ? CardInvoice::findAllForCard($selectedCardId) : [];
 
             echo $this->view->render("card_invoices/index", [
                 "title" => "Faturas | " . APP_NAME,
