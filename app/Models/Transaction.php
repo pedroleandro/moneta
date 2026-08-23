@@ -424,4 +424,116 @@ class Transaction extends AbstractModel
 
         return $results;
     }
+
+    public static function getMonthlyTotal(int $userId, string $type, string $yearMonth): float
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT COALESCE(SUM(amount), 0) AS total
+             FROM transactions
+             WHERE user_id = :user_id AND type = :type AND status = 'confirmado'
+               AND DATE_FORMAT(transaction_date, '%Y-%m') = :year_month
+               AND deleted_at IS NULL"
+        );
+        $statement->execute(["user_id" => $userId, "type" => $type, "year_month" => $yearMonth]);
+
+        return (float)$statement->fetch()->total;
+    }
+
+    public static function getMonthlyChartData(int $userId, int $monthsBack = 6): array
+    {
+        $labels = [];
+        $income = [];
+        $expense = [];
+
+        for ($i = $monthsBack - 1; $i >= 0; $i--) {
+            $reference = (new \DateTimeImmutable('first day of this month'))->modify("-{$i} month");
+            $yearMonth = $reference->format('Y-m');
+
+            $labels[] = ucfirst($reference->format('M')) . '/' . $reference->format('y');
+            $income[] = static::getMonthlyTotal($userId, self::TYPE_INCOME, $yearMonth);
+            $expense[] = static::getMonthlyTotal($userId, self::TYPE_EXPENSE, $yearMonth);
+        }
+
+        return ["labels" => $labels, "income" => $income, "expense" => $expense];
+    }
+
+    public static function getTopCategories(int $userId, string $yearMonth, int $limit = 5): array
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT c.name AS category_name, c.color AS category_color, c.icon AS category_icon,
+                    SUM(t.amount) AS total
+             FROM transactions t
+             INNER JOIN categories c ON c.id = t.category_id
+             WHERE t.user_id = :user_id AND t.type = 'despesa' AND t.status = 'confirmado'
+               AND DATE_FORMAT(t.transaction_date, '%Y-%m') = :year_month
+               AND t.deleted_at IS NULL
+             GROUP BY c.id, c.name, c.color, c.icon
+             ORDER BY total DESC
+             LIMIT :limit"
+        );
+        $statement->bindValue(":user_id", $userId, \PDO::PARAM_INT);
+        $statement->bindValue(":year_month", $yearMonth, \PDO::PARAM_STR);
+        $statement->bindValue(":limit", $limit, \PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public static function findRecentForUser(int $userId, int $limit = 6): array
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT t.*, c.name AS category_name, c.icon AS category_icon, c.color AS category_color,
+                    ba.name AS bank_account_name, cc.name AS credit_card_name
+             FROM transactions t
+             LEFT JOIN categories c ON c.id = t.category_id
+             LEFT JOIN bank_accounts ba ON ba.id = t.bank_account_id
+             LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
+             WHERE t.user_id = :user_id AND t.deleted_at IS NULL
+             ORDER BY t.transaction_date DESC, t.id DESC
+             LIMIT :limit"
+        );
+        $statement->bindValue(":user_id", $userId, \PDO::PARAM_INT);
+        $statement->bindValue(":limit", $limit, \PDO::PARAM_INT);
+        $statement->execute();
+
+        $results = [];
+
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $extra = [
+                "category_name" => $row["category_name"],
+                "category_icon" => $row["category_icon"],
+                "category_color" => $row["category_color"],
+                "bank_account_name" => $row["bank_account_name"],
+                "credit_card_name" => $row["credit_card_name"],
+            ];
+            unset(
+                $row["category_name"], $row["category_icon"], $row["category_color"],
+                $row["bank_account_name"], $row["credit_card_name"]
+            );
+
+            $instance = static::hydrate($row);
+            $instance->categoryName = $extra["category_name"];
+            $instance->categoryIcon = $extra["category_icon"];
+            $instance->categoryColor = $extra["category_color"];
+            $instance->bankAccountName = $extra["bank_account_name"];
+            $instance->creditCardName = $extra["credit_card_name"];
+
+            $results[] = $instance;
+        }
+
+        return $results;
+    }
+
+    private ?string $categoryIcon = null;
+
+    public function getCategoryIcon(): ?string
+    {
+        return $this->categoryIcon;
+    }
 }
