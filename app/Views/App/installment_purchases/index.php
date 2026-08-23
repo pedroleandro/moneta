@@ -14,7 +14,7 @@
     <?= \App\Core\Message::render() ?>
 
     <div class="card">
-        <div class="table-responsive text-nowrap">
+        <div class="table-responsive table-responsive-mobile text-nowrap">
             <table class="table">
                 <thead>
                 <tr>
@@ -27,18 +27,22 @@
                 </thead>
                 <tbody>
                 <?php if (empty($purchases)): ?>
-                    <tr>
+                    <tr class="table-empty-row">
                         <td colspan="5" class="text-center py-6">Nenhuma compra parcelada ainda.</td>
                     </tr>
                 <?php endif; ?>
 
                 <?php foreach ($purchases as $purchase): ?>
                     <tr>
-                        <td><?= htmlspecialchars($purchase->getDescription()) ?></td>
-                        <td><?= htmlspecialchars($purchase->getCreditCardName()) ?></td>
-                        <td class="text-end">R$ <?= number_format($purchase->getTotalAmount(), 2, ',', '.') ?></td>
-                        <td class="text-center"><?= $purchase->getInstallmentsCount() ?>x</td>
-                        <td><?= date('d/m/Y', strtotime($purchase->getFirstInstallmentDate())) ?></td>
+                        <td data-label="Descrição"><?= htmlspecialchars($purchase->getDescription()) ?></td>
+                        <td data-label="Cartão"><?= htmlspecialchars($purchase->getCreditCardName()) ?></td>
+                        <td data-label="Valor Total" class="text-end">
+                            R$ <?= number_format($purchase->getTotalAmount(), 2, ',', '.') ?>
+                        </td>
+                        <td data-label="Parcelas" class="text-center"><?= $purchase->getInstallmentsCount() ?>x</td>
+                        <td data-label="1ª Parcela">
+                            <?= date('d/m/Y', strtotime($purchase->getFirstInstallmentDate())) ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
