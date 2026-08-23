@@ -1,6 +1,6 @@
 <?= $this->layout("layouts/app_layout", [
-    "title" => $title ?? "Faturas | " . APP_NAME,
-    "active" => "faturas",
+        "title" => $title ?? "Faturas | " . APP_NAME,
+        "active" => "faturas",
 ]) ?>
 
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -24,7 +24,7 @@
         </div>
 
         <div class="card">
-            <div class="table-responsive text-nowrap">
+            <div class="table-responsive table-responsive-mobile text-nowrap">
                 <table class="table">
                     <thead>
                     <tr>
@@ -38,18 +38,26 @@
                     </thead>
                     <tbody>
                     <?php if (empty($invoices)): ?>
-                        <tr>
+                        <tr class="table-empty-row">
                             <td colspan="6" class="text-center py-6">Nenhuma fatura ainda para esse cartão.</td>
                         </tr>
                     <?php endif; ?>
 
                     <?php foreach ($invoices as $invoice): ?>
                         <tr>
-                            <td><?= date('m/Y', strtotime($invoice->getReferenceMonth())) ?></td>
-                            <td><?= date('d/m/Y', strtotime($invoice->getClosingDate())) ?></td>
-                            <td><?= date('d/m/Y', strtotime($invoice->getDueDate())) ?></td>
-                            <td class="text-end">R$ <?= number_format($invoice->getTotalAmount() ?? 0, 2, ',', '.') ?></td>
-                            <td>
+                            <td data-label="Mês de Referência">
+                                <?= date('m/Y', strtotime($invoice->getReferenceMonth())) ?>
+                            </td>
+                            <td data-label="Fechamento">
+                                <?= date('d/m/Y', strtotime($invoice->getClosingDate())) ?>
+                            </td>
+                            <td data-label="Vencimento">
+                                <?= date('d/m/Y', strtotime($invoice->getDueDate())) ?>
+                            </td>
+                            <td data-label="Total" class="text-end">
+                                R$ <?= number_format($invoice->getTotalAmount() ?? 0, 2, ',', '.') ?>
+                            </td>
+                            <td data-label="Status">
                                 <?php
                                 $badgeClass = match ($invoice->getStatus()) {
                                     'paga' => 'bg-label-success',
@@ -59,7 +67,7 @@
                                 ?>
                                 <span class="badge <?= $badgeClass ?> text-capitalize"><?= $invoice->getStatus() ?></span>
                             </td>
-                            <td class="text-end">
+                            <td data-label="Ações" class="text-end">
                                 <a href="<?= url('/faturas/' . $invoice->getId()) ?>" class="btn btn-sm btn-outline-primary">
                                     Ver Detalhe
                                 </a>

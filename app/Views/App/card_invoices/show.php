@@ -1,6 +1,6 @@
 <?= $this->layout("layouts/app_layout", [
-    "title" => $title ?? "Fatura | " . APP_NAME,
-    "active" => "faturas",
+        "title" => $title ?? "Fatura | " . APP_NAME,
+        "active" => "faturas",
 ]) ?>
 
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -17,7 +17,7 @@
     <?= \App\Core\Message::render() ?>
 
     <div class="row mb-6">
-        <div class="col-md-3">
+        <div class="col-6 col-md-3 mb-4 mb-md-0">
             <div class="card">
                 <div class="card-body">
                     <small class="text-body-secondary d-block">Total da Fatura</small>
@@ -25,7 +25,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3 mb-4 mb-md-0">
             <div class="card">
                 <div class="card-body">
                     <small class="text-body-secondary d-block">Já Pago</small>
@@ -33,15 +33,16 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <div class="card">
                 <div class="card-body">
                     <small class="text-body-secondary d-block">Falta Pagar</small>
-                    <h5 class="mb-0 text-danger">R$ <?= number_format($invoice->getRemainingAmount(), 2, ',', '.') ?></h5>
+                    <h5 class="mb-0 text-danger">
+                        R$ <?= number_format($invoice->getRemainingAmount(), 2, ',', '.') ?></h5>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <div class="card">
                 <div class="card-body">
                     <small class="text-body-secondary d-block">Vencimento</small>
@@ -57,7 +58,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">Lançamentos dessa fatura</h6>
                 </div>
-                <div class="table-responsive text-nowrap">
+                <div class="table-responsive table-responsive-mobile text-nowrap">
                     <table class="table">
                         <thead>
                         <tr>
@@ -69,16 +70,24 @@
                         </thead>
                         <tbody>
                         <?php if (empty($transactions)): ?>
-                            <tr>
+                            <tr class="table-empty-row">
                                 <td colspan="4" class="text-center py-6">Nenhum lançamento nessa fatura.</td>
                             </tr>
                         <?php endif; ?>
                         <?php foreach ($transactions as $transaction): ?>
                             <tr>
-                                <td><?= date('d/m/Y', strtotime($transaction->getTransactionDate())) ?></td>
-                                <td><?= htmlspecialchars($transaction->getDescription()) ?></td>
-                                <td><?= htmlspecialchars($transaction->getCategoryName() ?? '-') ?></td>
-                                <td class="text-end">R$ <?= number_format($transaction->getAmount(), 2, ',', '.') ?></td>
+                                <td data-label="Data">
+                                    <?= date('d/m/Y', strtotime($transaction->getTransactionDate())) ?>
+                                </td>
+                                <td data-label="Descrição">
+                                    <?= htmlspecialchars($transaction->getDescription()) ?>
+                                </td>
+                                <td data-label="Categoria">
+                                    <?= htmlspecialchars($transaction->getCategoryName() ?? '-') ?>
+                                </td>
+                                <td data-label="Valor" class="text-end">
+                                    R$ <?= number_format($transaction->getAmount(), 2, ',', '.') ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -90,7 +99,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">Quanto cada pessoa deve nessa fatura</h6>
                 </div>
-                <div class="table-responsive text-nowrap">
+                <div class="table-responsive table-responsive-mobile text-nowrap">
                     <table class="table">
                         <thead>
                         <tr>
@@ -100,22 +109,26 @@
                         </thead>
                         <tbody>
                         <?php if (empty($personTotals) && $myOwnAmount <= 0): ?>
-                            <tr>
+                            <tr class="table-empty-row">
                                 <td colspan="2" class="text-center py-6">Nenhuma divisão registrada nessa fatura.</td>
                             </tr>
                         <?php endif; ?>
 
                         <?php foreach ($personTotals as $personTotal): ?>
                             <tr>
-                                <td><?= htmlspecialchars($personTotal['card_user_name']) ?></td>
-                                <td class="text-end">R$ <?= number_format((float)$personTotal['total'], 2, ',', '.') ?></td>
+                                <td data-label="Pessoa"><?= htmlspecialchars($personTotal['card_user_name']) ?></td>
+                                <td data-label="Valor" class="text-end">
+                                    R$ <?= number_format((float)$personTotal['total'], 2, ',', '.') ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
 
                         <?php if ($myOwnAmount > 0): ?>
                             <tr class="fw-bold">
-                                <td>Meu (não dividido)</td>
-                                <td class="text-end">R$ <?= number_format($myOwnAmount, 2, ',', '.') ?></td>
+                                <td data-label="Pessoa">Meu (não dividido)</td>
+                                <td data-label="Valor" class="text-end">
+                                    R$ <?= number_format($myOwnAmount, 2, ',', '.') ?>
+                                </td>
                             </tr>
                         <?php endif; ?>
                         </tbody>
@@ -127,7 +140,7 @@
                 <div class="card-header">
                     <h6 class="mb-0">Pagamentos registrados</h6>
                 </div>
-                <div class="table-responsive text-nowrap">
+                <div class="table-responsive table-responsive-mobile text-nowrap">
                     <table class="table">
                         <thead>
                         <tr>
@@ -138,15 +151,21 @@
                         </thead>
                         <tbody>
                         <?php if (empty($payments)): ?>
-                            <tr>
+                            <tr class="table-empty-row">
                                 <td colspan="3" class="text-center py-6">Nenhum pagamento registrado ainda.</td>
                             </tr>
                         <?php endif; ?>
                         <?php foreach ($payments as $payment): ?>
                             <tr>
-                                <td><?= date('d/m/Y', strtotime($payment->getPaymentDate())) ?></td>
-                                <td><?= htmlspecialchars($payment->getBankAccountName() ?? 'Outro / Dinheiro') ?></td>
-                                <td class="text-end">R$ <?= number_format($payment->getAmount(), 2, ',', '.') ?></td>
+                                <td data-label="Data">
+                                    <?= date('d/m/Y', strtotime($payment->getPaymentDate())) ?>
+                                </td>
+                                <td data-label="Origem">
+                                    <?= htmlspecialchars($payment->getBankAccountName() ?? 'Outro / Dinheiro') ?>
+                                </td>
+                                <td data-label="Valor" class="text-end">
+                                    R$ <?= number_format($payment->getAmount(), 2, ',', '.') ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -154,8 +173,6 @@
                 </div>
             </div>
         </div>
-
-
 
         <div class="col-md-5">
             <?php if ($invoice->getRemainingAmount() > 0): ?>
