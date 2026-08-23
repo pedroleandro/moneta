@@ -14,7 +14,7 @@
     <?= \App\Core\Message::render() ?>
 
     <div class="card">
-        <div class="table-responsive text-nowrap">
+        <div class="table-responsive table-responsive-mobile text-nowrap">
             <table class="table">
                 <thead>
                 <tr>
@@ -29,36 +29,36 @@
                 </thead>
                 <tbody>
                 <?php if (empty($cards)): ?>
-                    <tr>
+                    <tr class="table-empty-row">
                         <td colspan="7" class="text-center py-6">Nenhum cartão cadastrado ainda.</td>
                     </tr>
                 <?php endif; ?>
 
                 <?php foreach ($cards as $card): ?>
                     <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
+                        <td data-label="Nome">
+                            <div class="d-flex align-items-center justify-content-end justify-content-md-start">
                                 <span class="rounded-circle me-2"
                                       style="background-color: <?= htmlspecialchars($card->getColor() ?: '#6c757d') ?>; width: 12px; height: 12px; flex-shrink: 0;"></span>
                                 <span><?= htmlspecialchars($card->getName()) ?></span>
                             </div>
                         </td>
-                        <td class="text-end">
+                        <td data-label="Limite" class="text-end">
                             R$ <?= number_format($card->getCardLimit() ?? 0, 2, ',', '.') ?>
                         </td>
-                        <td class="text-end">
+                        <td data-label="Disponível" class="text-end">
                             R$ <?= number_format($card->getAvailableLimit(), 2, ',', '.') ?>
                         </td>
-                        <td class="text-center">Dia <?= $card->getClosingDay() ?></td>
-                        <td class="text-center">Dia <?= $card->getDueDay() ?></td>
-                        <td>
+                        <td data-label="Fechamento" class="text-center">Dia <?= $card->getClosingDay() ?></td>
+                        <td data-label="Vencimento" class="text-center">Dia <?= $card->getDueDay() ?></td>
+                        <td data-label="Status">
                             <?php if ($card->isActive()): ?>
                                 <span class="badge bg-label-success">Ativo</span>
                             <?php else: ?>
                                 <span class="badge bg-label-secondary">Inativo</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-end">
+                        <td data-label="Ações" class="text-end">
                             <a href="<?= url('/cartoes/' . $card->getId() . '/editar') ?>"
                                class="btn btn-icon btn-outline-secondary btn-icon-soft-primary me-1" title="Editar">
                                 <i class="icon-base bx bx-edit"></i>
@@ -79,7 +79,6 @@
     </div>
 </div>
 
-<!-- Modal de confirmação de exclusão (compartilhado por todas as linhas) -->
 <div class="modal fade" id="modal-excluir-cartao" data-delete-modal tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -88,7 +87,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
-                Tem certeza que deseja excluir o cartão <strong data-delete-name></strong>? Essa ação não pode ser desfeita.
+                Tem certeza que deseja excluir o cartão <strong data-delete-name></strong>? Essa ação não pode ser
+                desfeita.
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
