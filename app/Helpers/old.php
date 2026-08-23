@@ -1,8 +1,13 @@
 <?php
 
-function old(string $field, mixed $default = ''): string
+function old(string $field, mixed $default = ''): mixed
 {
     $old = $_SESSION['_old_input'][$field] ?? $default;
+    
+    if (is_array($old)) {
+        return $old;
+    }
+
     return htmlspecialchars((string)$old);
 }
 

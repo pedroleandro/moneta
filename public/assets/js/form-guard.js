@@ -22,7 +22,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (requiredFields.length > 0) {
-            submitBtn.disabled = !allFieldsFilled();
+            // Adia a checagem inicial pro fim da fila de eventos — dá
+            // tempo de outros scripts (ex: currency-mask.js) que também
+            // escutam DOMContentLoaded terminarem de preencher campos
+            // via JS antes da gente conferir se estão vazios.
+            setTimeout(function () {
+                submitBtn.disabled = !allFieldsFilled();
+            }, 0);
 
             requiredFields.forEach(function (field) {
                 field.addEventListener('input', function () {
@@ -43,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 window.addEventListener('pageshow', function (event) {
-    if (!event.persisted) return; // só age quando veio do bfcache
+    if (!event.persisted) return;
 
     document.querySelectorAll('button[type="submit"]').forEach(function (submitBtn) {
         if (submitBtn.dataset.originalHtml) {

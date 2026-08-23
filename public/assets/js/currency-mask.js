@@ -16,30 +16,33 @@ function formatCurrencyFromDigits(digits) {
     };
 }
 
+window.applyCurrencyMask = function (input, hiddenOverride) {
+    const targetSelector = input.dataset.target;
+    const hidden = hiddenOverride || (targetSelector ? document.querySelector(targetSelector) : null);
+
+    function sync(digits) {
+        const result = formatCurrencyFromDigits(digits);
+        input.value = result.display;
+        if (hidden) hidden.value = result.raw;
+    }
+
+    const initialRaw = hidden && hidden.value ? parseFloat(hidden.value) : 0;
+    const initialDigits = Math.round((initialRaw || 0) * 100).toString();
+    sync(initialDigits);
+
+    input.addEventListener('input', function () {
+        sync(input.value);
+    });
+
+    input.addEventListener('focus', function () {
+        setTimeout(function () {
+            input.setSelectionRange(input.value.length, input.value.length);
+        }, 0);
+    });
+};
+
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.currency-mask').forEach(function (input) {
-        const targetSelector = input.dataset.target;
-        const hidden = targetSelector ? document.querySelector(targetSelector) : null;
-
-        function sync(digits) {
-            const result = formatCurrencyFromDigits(digits);
-            input.value = result.display;
-            if (hidden) hidden.value = result.raw;
-        }
-
-        // Inicializa a partir do valor cru já existente (edição).
-        const initialRaw = hidden && hidden.value ? parseFloat(hidden.value) : 0;
-        const initialDigits = Math.round((initialRaw || 0) * 100).toString();
-        sync(initialDigits);
-
-        input.addEventListener('input', function () {
-            sync(input.value);
-        });
-
-        input.addEventListener('focus', function () {
-            setTimeout(function () {
-                input.setSelectionRange(input.value.length, input.value.length);
-            }, 0);
-        });
+    document.querySelectorAll('.currency-mask:not(.split-amount-display)').forEach(function (input) {
+        window.applyCurrencyMask(input);
     });
 });

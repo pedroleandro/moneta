@@ -281,9 +281,10 @@ class CardUser extends AbstractModel
     public function totalSpent(): float
     {
         $statement = $this->connection->prepare(
-            "SELECT COALESCE(SUM(amount), 0) AS total
-             FROM transactions
-             WHERE card_user_id = :id AND deleted_at IS NULL"
+            "SELECT COALESCE(SUM(ts.amount), 0) AS total
+         FROM transaction_splits ts
+         INNER JOIN transactions t ON t.id = ts.transaction_id
+         WHERE ts.card_user_id = :id AND t.deleted_at IS NULL"
         );
         $statement->execute(["id" => $this->getId()]);
 
@@ -295,7 +296,7 @@ class CardUser extends AbstractModel
         $id = $this->getId();
 
         $queries = [
-            "SELECT COUNT(*) AS total FROM transactions WHERE card_user_id = :id",
+            "SELECT COUNT(*) AS total FROM transaction_splits WHERE card_user_id = :id",
             "SELECT COUNT(*) AS total FROM installment_purchases WHERE card_user_id = :id",
         ];
 

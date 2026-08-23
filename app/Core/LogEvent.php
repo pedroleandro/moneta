@@ -55,6 +55,12 @@ final class LogEvent
     public const TRANSFER_CREATED = "transfer_created";
     public const TRANSFER_DELETED = "transfer_deleted";
 
+    // Faturas
+    public const INVOICE_PAYMENT_CREATED = "invoice_payment_created";
+
+    // Compras Parceladas
+    public const INSTALLMENT_PURCHASE_CREATED = "installment_purchase_created";
+
     public static function label(string $event): string
     {
         return match ($event) {
@@ -108,6 +114,12 @@ final class LogEvent
             // Transferências
             self::TRANSFER_CREATED => "Transferência realizada",
             self::TRANSFER_DELETED => "Transferência excluída",
+
+            // Faturas
+            self::INVOICE_PAYMENT_CREATED => "Pagamento de fatura registrado",
+
+            // Compras parceladas
+            self::INSTALLMENT_PURCHASE_CREATED => "Compra parcelada criada",
 
             default => $event,
         };
