@@ -152,4 +152,29 @@ class TransactionSplit extends AbstractModel
 
         return (float)$statement->fetch()->total;
     }
+
+    public static function getOwedToUserForMonth(int $userId, string $yearMonth, ?int $cardUserId = null): float
+    {
+        $model = new static();
+
+        $sql = "SELECT COALESCE(SUM(ts.amount), 0) AS total
+                FROM transaction_splits ts
+                INNER JOIN transactions t ON t.id = ts.transaction_id
+                INNER JOIN card_users cu ON cu.id = ts.card_user_id
+                WHERE cu.owner_user_id = :user_id
+                  AND t.deleted_at IS NULL
+                  AND DATE_FORMAT(t.transaction_date, '%Y-%m') = :year_month";
+
+        $params = ["user_id" => $userId, "year_month" => $yearMonth];
+
+        if ($cardUserId) {
+            $sql .= " AND ts.card_user_id = :card_user_id";
+            $params["card_user_id"] = $cardUserId;
+        }
+
+        $statement = $model->connection->prepare($sql);
+        $statement->execute($params);
+
+        return (float)$statement->fetch()->total;
+    }
 }

@@ -536,4 +536,36 @@ class Transaction extends AbstractModel
     {
         return $this->categoryIcon;
     }
+
+    public static function getFirstMonthForUser(int $userId): ?string
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT MIN(transaction_date) AS first_date
+             FROM transactions
+             WHERE user_id = :user_id AND deleted_at IS NULL"
+        );
+        $statement->execute(["user_id" => $userId]);
+
+        $firstDate = $statement->fetch()->first_date;
+
+        return $firstDate ? (new \DateTimeImmutable($firstDate))->format('Y-m') : null;
+    }
+
+    public static function getLastMonthForUser(int $userId): ?string
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT MAX(transaction_date) AS last_date
+             FROM transactions
+             WHERE user_id = :user_id AND deleted_at IS NULL"
+        );
+        $statement->execute(["user_id" => $userId]);
+
+        $lastDate = $statement->fetch()->last_date;
+
+        return $lastDate ? (new \DateTimeImmutable($lastDate))->format('Y-m') : null;
+    }
 }

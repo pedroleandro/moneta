@@ -4,6 +4,21 @@
 ]) ?>
 
 <div class="container-xxl flex-grow-1 container-p-y">
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-6 gap-3">
+        <h5 class="mb-0">Resumo do mês</h5>
+        <div>
+            <label for="mes" class="visually-hidden">Mês</label>
+            <select class="form-select" id="mes"
+                    onchange="updateDashboardFilters()">
+                <?php foreach ($monthOptions as $option): ?>
+                    <option value="<?= $option['value'] ?>" <?= $option['value'] === $selectedMonth ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($option['label']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Saudação + saldo total -->
         <div class="col-12 col-lg-8 mb-6">
@@ -40,7 +55,7 @@
                                 <img src="<?= assets_sneat('/assets/img/icons/unicons/chart-success.png') ?>"
                                      alt="Receitas" class="rounded"/>
                             </div>
-                            <p class="mb-1">Receitas (mês)</p>
+                            <p class="mb-1">Receitas</p>
                             <h5 class="mb-0 text-success">R$ <?= number_format($monthIncome, 2, ',', '.') ?></h5>
                         </div>
                     </div>
@@ -52,7 +67,7 @@
                                 <img src="<?= assets_sneat('/assets/img/icons/unicons/cc-warning.png') ?>"
                                      alt="Despesas" class="rounded"/>
                             </div>
-                            <p class="mb-1">Despesas (mês)</p>
+                            <p class="mb-1">Despesas</p>
                             <h5 class="mb-0 text-danger">R$ <?= number_format($monthExpense, 2, ',', '.') ?></h5>
                         </div>
                     </div>
@@ -82,9 +97,25 @@
                     </div>
                     <p class="mb-1">Quanto devem pra você</p>
                     <h4 class="mb-2">R$ <?= number_format($owedToMe, 2, ',', '.') ?></h4>
-                    <small class="text-body-secondary">Somando todas as divisões de cartão registradas</small>
+
+                    <?php if (!empty($cardUsers)): ?>
+                        <label for="pessoa" class="form-label small text-body-secondary mb-1">Filtrar por pessoa</label>
+                        <select class="form-select form-select-sm mb-2" id="pessoa" onchange="updateDashboardFilters()">
+                            <option value="">Todas as pessoas</option>
+                            <?php foreach ($cardUsers as $cardUser): ?>
+                                <option value="<?= $cardUser->getId() ?>" <?= $cardUser->getId() === $selectedPersonId ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($cardUser->getName()) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php endif; ?>
+
+                    <small class="text-body-secondary">
+                        <?= $selectedPersonId ? 'Nesse mês, com essa pessoa' : 'Somando todas as pessoas nesse mês' ?>
+                    </small>
+
                     <a href="<?= url('/pessoas-cartao') ?>" class="btn btn-sm btn-outline-primary mt-4">
-                        Ver detalhe
+                        Ver todas as pessoas
                     </a>
                 </div>
             </div>
@@ -256,4 +287,20 @@
 
         new ApexCharts(chartEl, options).render();
     });
+
+    function updateDashboardFilters() {
+        const mesEl = document.getElementById('mes');
+        const pessoaEl = document.getElementById('pessoa');
+
+        const mes = mesEl ? mesEl.value : '';
+        const pessoa = pessoaEl ? pessoaEl.value : '';
+
+        let url = '<?= url('/dashboard') ?>?mes=' + encodeURIComponent(mes);
+
+        if (pessoa) {
+            url += '&pessoa=' + encodeURIComponent(pessoa);
+        }
+
+        window.location.href = url;
+    }
 </script>
