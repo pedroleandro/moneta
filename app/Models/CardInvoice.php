@@ -213,4 +213,41 @@ class CardInvoice extends AbstractModel
 
         return $results;
     }
+
+    public static function findUpcomingForUser(int $userId, int $limit = 5): array
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT ci.*, cc.name AS credit_card_name
+             FROM card_invoices ci
+             INNER JOIN credit_cards cc ON cc.id = ci.credit_card_id
+             WHERE cc.user_id = :user_id AND ci.status != 'paga' AND ci.deleted_at IS NULL
+             ORDER BY ci.due_date ASC
+             LIMIT :limit"
+        );
+        $statement->bindValue(":user_id", $userId, \PDO::PARAM_INT);
+        $statement->bindValue(":limit", $limit, \PDO::PARAM_INT);
+        $statement->execute();
+
+        $results = [];
+
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $cardName = $row["credit_card_name"];
+            unset($row["credit_card_name"]);
+
+            $instance = static::hydrate($row);
+            $instance->creditCardName = $cardName;
+            $results[] = $instance;
+        }
+
+        return $results;
+    }
+
+    private ?string $creditCardName = null;
+
+    public function getCreditCardName(): ?string
+    {
+        return $this->creditCardName;
+    }
 }
