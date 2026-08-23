@@ -14,7 +14,7 @@
     <?= \App\Core\Message::render() ?>
 
     <div class="card">
-        <div class="table-responsive text-nowrap">
+        <div class="table-responsive table-responsive-mobile text-nowrap">
             <table class="table">
                 <thead>
                 <tr>
@@ -27,18 +27,18 @@
                 </thead>
                 <tbody>
                 <?php if (empty($cardUsers)): ?>
-                    <tr>
+                    <tr class="table-empty-row">
                         <td colspan="5" class="text-center py-6">Nenhuma pessoa cadastrada ainda.</td>
                     </tr>
                 <?php endif; ?>
 
                 <?php foreach ($cardUsers as $cardUser): ?>
                     <tr>
-                        <td><?= htmlspecialchars($cardUser->getName()) ?></td>
-                        <td><?= htmlspecialchars($cardUser->getLinkedCardNames() ?: '-') ?></td>
-                        <td>
+                        <td data-label="Nome"><?= htmlspecialchars($cardUser->getName()) ?></td>
+                        <td data-label="Cartões"><?= htmlspecialchars($cardUser->getLinkedCardNames() ?: '-') ?></td>
+                        <td data-label="Telefone">
                             <?php if ($cardUser->getPhone()): ?>
-                                <div class="d-flex align-items-center">
+                                <div class="d-flex align-items-center justify-content-end justify-content-md-start">
                                     <span class="me-2"><?= htmlspecialchars($cardUser->getFormattedPhone()) ?></span>
                                     <a href="<?= htmlspecialchars($cardUser->getWhatsappLink()) ?>"
                                        target="_blank" rel="noopener"
@@ -51,10 +51,10 @@
                                 -
                             <?php endif; ?>
                         </td>
-                        <td class="text-end">
+                        <td data-label="Total Gasto" class="text-end">
                             R$ <?= number_format($cardUser->totalSpent(), 2, ',', '.') ?>
                         </td>
-                        <td class="text-end">
+                        <td data-label="Ações" class="text-end">
                             <a href="<?= url('/pessoas-cartao/' . $cardUser->getId() . '/editar') ?>"
                                class="btn btn-icon btn-outline-secondary btn-icon-soft-primary me-1" title="Editar">
                                 <i class="icon-base bx bx-edit"></i>
@@ -75,7 +75,6 @@
     </div>
 </div>
 
-<!-- Modal de confirmação de exclusão (compartilhado por todas as linhas) -->
 <div class="modal fade" id="modal-excluir-pessoa-cartao" data-delete-modal tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
