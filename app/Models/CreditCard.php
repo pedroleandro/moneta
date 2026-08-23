@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\AbstractModel;
+use Exception;
 
 class CreditCard extends AbstractModel
 {
@@ -223,6 +224,20 @@ class CreditCard extends AbstractModel
         return $row ? static::hydrate($row) : null;
     }
 
+    public function getAvailableLimit(): float
+    {
+        $statement = $this->connection->prepare(
+            "SELECT COALESCE(SUM(total_amount), 0) AS total
+         FROM card_invoices
+         WHERE credit_card_id = :id AND status != 'paga' AND deleted_at IS NULL"
+        );
+        $statement->execute(["id" => $this->getId()]);
+
+        $used = (float)$statement->fetch()->total;
+
+        return max(0, $this->cardLimit - $used);
+    }
+
     public function isInUse(): bool
     {
         $id = $this->getId();
@@ -246,5 +261,73 @@ class CreditCard extends AbstractModel
         }
 
         return false;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getReferenceMonthForPurchase(string $purchaseDate): string
+    {
+        $date = new \DateTimeImmutable($purchaseDate);
+        $day = (int)$date->format('j');
+
+        $referenceMonth = $date->format('Y-m-01');
+
+        if ($day > $this->closingDay) {
+            $referenceMonth = $date->modify('first day of next month')->format('Y-m-01');
+        }
+
+        return $referenceMonth;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function resolveInvoiceForReferenceMonth(string $referenceMonth): \App\Models\CardInvoice
+    {
+        $existing = \App\Models\CardInvoice::findByCardAndMonth($this->getId(), $referenceMonth);
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $referenceDate = new \DateTimeImmutable($referenceMonth);
+        $closingDate = $referenceDate->setDate(
+            (int)$referenceDate->format('Y'),
+            (int)$referenceDate->format('m'),
+            min($this->closingDay, (int)$referenceDate->format('t'))
+        );
+
+        if ($this->dueDay > $this->closingDay) {
+            $dueMonth = $closingDate;
+        } else {
+            $dueMonth = $closingDate->modify('+1 month');
+        }
+
+        $dueDate = $dueMonth->setDate(
+            (int)$dueMonth->format('Y'),
+            (int)$dueMonth->format('m'),
+            min($this->dueDay, (int)$dueMonth->format('t'))
+        );
+
+        $invoice = new \App\Models\CardInvoice();
+        $invoice->fill([
+            "credit_card_id" => $this->getId(),
+            "reference_month" => $referenceMonth,
+            "closing_date" => $closingDate->format('Y-m-d'),
+            "due_date" => $dueDate->format('Y-m-d'),
+            "status" => "aberta",
+        ]);
+        $invoice->save();
+
+        return $invoice;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function resolveInvoiceForDate(string $purchaseDate): \App\Models\CardInvoice
+    {
+        return $this->resolveInvoiceForReferenceMonth($this->getReferenceMonthForPurchase($purchaseDate));
     }
 }
