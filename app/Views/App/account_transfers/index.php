@@ -14,7 +14,7 @@
     <?= \App\Core\Message::render() ?>
 
     <div class="card">
-        <div class="table-responsive text-nowrap">
+        <div class="table-responsive table-responsive-mobile text-nowrap">
             <table class="table">
                 <thead>
                 <tr>
@@ -29,20 +29,22 @@
                 </thead>
                 <tbody>
                 <?php if (empty($transfers)): ?>
-                    <tr>
+                    <tr class="table-empty-row">
                         <td colspan="7" class="text-center py-6">Nenhuma transferência realizada ainda.</td>
                     </tr>
                 <?php endif; ?>
 
                 <?php foreach ($transfers as $transfer): ?>
                     <tr>
-                        <td><?= date('d/m/Y', strtotime($transfer->getTransferDate())) ?></td>
-                        <td><?= htmlspecialchars($transfer->getFromAccountName()) ?></td>
+                        <td data-label="Data"><?= date('d/m/Y', strtotime($transfer->getTransferDate())) ?></td>
+                        <td data-label="De"><?= htmlspecialchars($transfer->getFromAccountName()) ?></td>
                         <td><i class="icon-base bx bx-right-arrow-alt"></i></td>
-                        <td><?= htmlspecialchars($transfer->getToAccountName()) ?></td>
-                        <td><?= htmlspecialchars($transfer->getDescription() ?: '-') ?></td>
-                        <td class="text-end">R$ <?= number_format($transfer->getAmount(), 2, ',', '.') ?></td>
-                        <td class="text-end">
+                        <td data-label="Para"><?= htmlspecialchars($transfer->getToAccountName()) ?></td>
+                        <td data-label="Descrição"><?= htmlspecialchars($transfer->getDescription() ?: '-') ?></td>
+                        <td data-label="Valor" class="text-end">
+                            R$ <?= number_format($transfer->getAmount(), 2, ',', '.') ?>
+                        </td>
+                        <td data-label="Ações" class="text-end">
                             <button type="button" class="btn btn-icon btn-outline-danger btn-icon-soft-danger"
                                     title="Excluir"
                                     data-bs-toggle="modal" data-bs-target="#modal-excluir-transferencia"
