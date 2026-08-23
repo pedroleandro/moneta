@@ -90,8 +90,8 @@ $oldSplitAmounts = old('split_amount', []);
 
                 <div id="splits-container">
                     <?php foreach ($oldSplitPersonIds as $index => $personId): ?>
-                        <div class="row split-row mb-3 align-items-center">
-                            <div class="col-md-6">
+                        <div class="split-row mb-3 p-3 border rounded">
+                            <div class="mb-2">
                                 <select class="form-select" name="split_card_user_id[]">
                                     <option value="">Selecione a pessoa...</option>
                                     <?php foreach ($cardUsers as $cardUser): ?>
@@ -103,14 +103,14 @@ $oldSplitAmounts = old('split_amount', []);
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="col-md-5">
-                                <input type="text" class="form-control currency-mask split-amount-display"
-                                       inputmode="numeric" placeholder="R$ 0,00"/>
-                                <input type="hidden" name="split_amount[]" class="split-amount-hidden"
-                                       value="<?= htmlspecialchars($oldSplitAmounts[$index] ?? '0.00') ?>"/>
-                            </div>
-                            <div class="col-md-1">
-                                <button type="button" class="btn btn-icon btn-outline-danger remove-split-row">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="flex-grow-1">
+                                    <input type="text" class="form-control currency-mask split-amount-display"
+                                           inputmode="numeric" placeholder="R$ 0,00"/>
+                                    <input type="hidden" name="split_amount[]" class="split-amount-hidden"
+                                           value="<?= htmlspecialchars($oldSplitAmounts[$index] ?? '0.00') ?>"/>
+                                </div>
+                                <button type="button" class="btn btn-icon btn-outline-danger remove-split-row flex-shrink-0">
                                     <i class="icon-base bx bx-x"></i>
                                 </button>
                             </div>
@@ -123,8 +123,8 @@ $oldSplitAmounts = old('split_amount', []);
                 </button>
 
                 <template id="split-row-template">
-                    <div class="row split-row mb-3 align-items-center">
-                        <div class="col-md-6">
+                    <div class="split-row mb-3 p-3 border rounded">
+                        <div class="mb-2">
                             <select class="form-select" name="split_card_user_id[]">
                                 <option value="">Selecione a pessoa...</option>
                                 <?php foreach ($cardUsers as $cardUser): ?>
@@ -135,13 +135,13 @@ $oldSplitAmounts = old('split_amount', []);
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="col-md-5">
-                            <input type="text" class="form-control currency-mask split-amount-display"
-                                   inputmode="numeric" placeholder="R$ 0,00"/>
-                            <input type="hidden" name="split_amount[]" class="split-amount-hidden" value="0.00"/>
-                        </div>
-                        <div class="col-md-1">
-                            <button type="button" class="btn btn-icon btn-outline-danger remove-split-row">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="flex-grow-1">
+                                <input type="text" class="form-control currency-mask split-amount-display"
+                                       inputmode="numeric" placeholder="R$ 0,00"/>
+                                <input type="hidden" name="split_amount[]" class="split-amount-hidden" value="0.00"/>
+                            </div>
+                            <button type="button" class="btn btn-icon btn-outline-danger remove-split-row flex-shrink-0">
                                 <i class="icon-base bx bx-x"></i>
                             </button>
                         </div>
