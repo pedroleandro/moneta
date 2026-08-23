@@ -136,4 +136,20 @@ class TransactionSplit extends AbstractModel
 
         return $statement->fetchAll(\PDO::FETCH_ASSOC);
     }
+
+    public static function getTotalOwedToUser(int $userId): float
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT COALESCE(SUM(ts.amount), 0) AS total
+             FROM transaction_splits ts
+             INNER JOIN transactions t ON t.id = ts.transaction_id
+             INNER JOIN card_users cu ON cu.id = ts.card_user_id
+             WHERE cu.owner_user_id = :user_id AND t.deleted_at IS NULL"
+        );
+        $statement->execute(["user_id" => $userId]);
+
+        return (float)$statement->fetch()->total;
+    }
 }
