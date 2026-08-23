@@ -14,7 +14,7 @@
     <?= \App\Core\Message::render() ?>
 
     <div class="card">
-        <div class="table-responsive text-nowrap">
+        <div class="table-responsive table-responsive-mobile text-nowrap">
             <table class="table">
                 <thead>
                 <tr>
@@ -28,33 +28,33 @@
                 </thead>
                 <tbody>
                 <?php if (empty($accounts)): ?>
-                    <tr>
+                    <tr class="table-empty-row">
                         <td colspan="6" class="text-center py-6">Nenhuma conta cadastrada ainda.</td>
                     </tr>
                 <?php endif; ?>
 
                 <?php foreach ($accounts as $account): ?>
                     <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
+                        <td data-label="Nome">
+                            <div class="d-flex align-items-center justify-content-end justify-content-md-start">
                                 <span class="rounded-circle me-2"
                                       style="background-color: <?= htmlspecialchars($account->getColor() ?: '#6c757d') ?>; width: 12px; height: 12px; flex-shrink: 0;"></span>
                                 <span><?= htmlspecialchars($account->getName()) ?></span>
                             </div>
                         </td>
-                        <td><?= htmlspecialchars($account->getTypeLabel()) ?></td>
-                        <td><?= htmlspecialchars($account->getBankName() ?: '-') ?></td>
-                        <td class="text-end">
+                        <td data-label="Tipo"><?= htmlspecialchars($account->getTypeLabel()) ?></td>
+                        <td data-label="Banco"><?= htmlspecialchars($account->getBankName() ?: '-') ?></td>
+                        <td data-label="Saldo Atual" class="text-end">
                             R$ <?= number_format($account->getCurrentBalance() ?? 0, 2, ',', '.') ?>
                         </td>
-                        <td>
+                        <td data-label="Status">
                             <?php if ($account->isActive()): ?>
                                 <span class="badge bg-label-success">Ativa</span>
                             <?php else: ?>
                                 <span class="badge bg-label-secondary">Inativa</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-end">
+                        <td data-label="Ações" class="text-end">
                             <a href="<?= url('/contas/' . $account->getId() . '/editar') ?>"
                                class="btn btn-icon btn-outline-secondary btn-icon-soft-primary me-1" title="Editar">
                                 <i class="icon-base bx bx-edit"></i>
@@ -75,7 +75,6 @@
     </div>
 </div>
 
-<!-- Modal de confirmação de exclusão (compartilhado por todas as linhas) -->
 <div class="modal fade" id="modal-excluir-conta" data-delete-modal tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
