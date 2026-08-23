@@ -41,6 +41,8 @@
 
     <link rel="stylesheet" href="<?= assets_sneat('/assets/vendor/libs/apex-charts/apex-charts.css') ?>"/>
 
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+
     <!-- Page CSS -->
 
     <!-- Helpers -->
@@ -338,6 +340,10 @@
 <!-- Core JS -->
 
 <script src="<?= assets_sneat('/assets/vendor/libs/jquery/jquery.js') ?>"></script>
+
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="<?= assets('/js/datatable-init.js') ?>"></script>
 
 <script src="<?= assets_sneat('/assets/vendor/libs/popper/popper.js') ?>"></script>
 <script src="<?= assets_sneat('/assets/vendor/js/bootstrap.js') ?>"></script>
