@@ -32,6 +32,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const row = container.lastElementChild;
         refreshRowOptions(row);
         initSplitRow(row);
+
+        if (typeof initModernSelects === 'function') {
+            initModernSelects(row);
+        }
     }
 
     addBtn.addEventListener('click', addRow);
