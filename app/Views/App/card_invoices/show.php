@@ -59,7 +59,7 @@
                     <h6 class="mb-0">Lançamentos dessa fatura</h6>
                 </div>
                 <div class="table-responsive table-responsive-mobile text-nowrap">
-                    <table class="table">
+                    <table class="table table-datatable">
                         <thead>
                         <tr>
                             <th>Data</th>
@@ -100,7 +100,7 @@
                     <h6 class="mb-0">Quanto cada pessoa deve nessa fatura</h6>
                 </div>
                 <div class="table-responsive table-responsive-mobile text-nowrap">
-                    <table class="table">
+                    <table class="table table-datatable">
                         <thead>
                         <tr>
                             <th>Pessoa</th>
@@ -141,7 +141,7 @@
                     <h6 class="mb-0">Pagamentos registrados</h6>
                 </div>
                 <div class="table-responsive table-responsive-mobile text-nowrap">
-                    <table class="table">
+                    <table class="table table-datatable">
                         <thead>
                         <tr>
                             <th>Data</th>

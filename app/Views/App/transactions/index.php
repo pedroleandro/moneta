@@ -22,7 +22,7 @@
 
     <div class="card">
         <div class="table-responsive table-responsive-mobile text-nowrap">
-            <table class="table">
+            <table class="table table-datatable">
                 <thead>
                 <tr>
                     <th>Data</th>
