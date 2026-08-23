@@ -164,10 +164,6 @@ class InstallmentPurchaseController extends Controller
                 return;
             }
 
-            // Descobre o mês de referência da 1ª parcela a partir da
-            // DATA DA COMPRA — se comprou antes do fechamento, cai na
-            // fatura atual; se depois, cai na próxima. A data real da
-            // 1ª parcela é o VENCIMENTO dessa fatura, não a data digitada.
             $firstReferenceMonth = $card->getReferenceMonthForPurchase($purchaseDate);
             $firstInvoice = $card->resolveInvoiceForReferenceMonth($firstReferenceMonth);
             $purchase->setFirstInstallmentDate($firstInvoice->getDueDate());
