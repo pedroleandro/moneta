@@ -145,6 +145,7 @@ class InstallmentPurchaseController extends Controller
                 "first_installment_date" => $purchaseDate,
             ]);
 
+            $data["first_installment_date"] = $purchaseDate;
             $errors = $purchase->validate($data);
 
             if ($errors) {
