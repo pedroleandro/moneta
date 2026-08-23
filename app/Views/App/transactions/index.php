@@ -21,7 +21,7 @@
     <?= \App\Core\Message::render() ?>
 
     <div class="card">
-        <div class="table-responsive text-nowrap">
+        <div class="table-responsive table-responsive-mobile text-nowrap">
             <table class="table">
                 <thead>
                 <tr>
@@ -36,35 +36,41 @@
                 </thead>
                 <tbody>
                 <?php if (empty($transactions)): ?>
-                    <tr>
+                    <tr class="table-empty-row">
                         <td colspan="7" class="text-center py-6">Nenhum lançamento encontrado.</td>
                     </tr>
                 <?php endif; ?>
 
                 <?php foreach ($transactions as $transaction): ?>
                     <tr>
-                        <td><?= date('d/m/Y', strtotime($transaction->getTransactionDate())) ?></td>
-                        <td><?= htmlspecialchars($transaction->getDescription()) ?></td>
-                        <td>
-                            <div class="d-flex align-items-center">
+                        <td data-label="Data">
+                            <?= date('d/m/Y', strtotime($transaction->getTransactionDate())) ?>
+                        </td>
+                        <td data-label="Descrição">
+                            <?= htmlspecialchars($transaction->getDescription()) ?>
+                        </td>
+                        <td data-label="Categoria">
+                            <div class="d-flex align-items-center justify-content-end justify-content-md-start">
                                 <span class="rounded-circle me-2"
                                       style="background-color: <?= htmlspecialchars($transaction->getCategoryColor() ?: '#6c757d') ?>; width: 10px; height: 10px; flex-shrink: 0;"></span>
                                 <span><?= htmlspecialchars($transaction->getCategoryName() ?? '-') ?></span>
                             </div>
                         </td>
-                        <td><?= htmlspecialchars($transaction->getBankAccountName() ?? $transaction->getCreditCardName() ?? '-') ?></td>
-                        <td class="text-end <?= $transaction->getType() === 'receita' ? 'text-success' : 'text-danger' ?>">
+                        <td data-label="Conta/Cartão">
+                            <?= htmlspecialchars($transaction->getBankAccountName() ?? $transaction->getCreditCardName() ?? '-') ?>
+                        </td>
+                        <td data-label="Valor" class="text-end <?= $transaction->getType() === 'receita' ? 'text-success' : 'text-danger' ?>">
                             <?= $transaction->getType() === 'receita' ? '+' : '-' ?>
                             R$ <?= number_format($transaction->getAmount(), 2, ',', '.') ?>
                         </td>
-                        <td>
+                        <td data-label="Status">
                             <?php if ($transaction->isConfirmed()): ?>
                                 <span class="badge bg-label-success">Confirmado</span>
                             <?php else: ?>
                                 <span class="badge bg-label-warning">Pendente</span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-end">
+                        <td data-label="Ações" class="text-end">
                             <?php if ($transaction->getType() !== 'transferencia'): ?>
                                 <a href="<?= url('/lancamentos/' . $transaction->getId() . '/editar') ?>"
                                    class="btn btn-icon btn-outline-secondary btn-icon-soft-primary me-1" title="Editar">
