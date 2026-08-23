@@ -250,4 +250,63 @@ class CardInvoice extends AbstractModel
     {
         return $this->creditCardName;
     }
+
+    public static function findWindowForCard(int $creditCardId, int $pastCount = 1, int $futureCount = 2): array
+    {
+        $model = new static();
+
+        $currentStatement = $model->connection->prepare(
+            "SELECT * FROM card_invoices
+             WHERE credit_card_id = :id AND status = 'aberta' AND deleted_at IS NULL
+             ORDER BY due_date ASC LIMIT 1"
+        );
+        $currentStatement->execute(["id" => $creditCardId]);
+        $currentRow = $currentStatement->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$currentRow) {
+            $fallbackStatement = $model->connection->prepare(
+                "SELECT * FROM card_invoices
+                 WHERE credit_card_id = :id AND deleted_at IS NULL
+                 ORDER BY ABS(DATEDIFF(due_date, CURDATE())) ASC LIMIT 1"
+            );
+            $fallbackStatement->execute(["id" => $creditCardId]);
+            $currentRow = $fallbackStatement->fetch(\PDO::FETCH_ASSOC);
+        }
+
+        if (!$currentRow) {
+            return ["past" => [], "current" => null, "future" => []];
+        }
+
+        $current = static::hydrate($currentRow);
+
+        $pastStatement = $model->connection->prepare(
+            "SELECT * FROM card_invoices
+             WHERE credit_card_id = :id AND due_date < :due_date AND deleted_at IS NULL
+             ORDER BY due_date DESC LIMIT :limit"
+        );
+        $pastStatement->bindValue(":id", $creditCardId, \PDO::PARAM_INT);
+        $pastStatement->bindValue(":due_date", $current->getDueDate());
+        $pastStatement->bindValue(":limit", $pastCount, \PDO::PARAM_INT);
+        $pastStatement->execute();
+        $past = array_reverse(array_map(
+            fn($row) => static::hydrate($row),
+            $pastStatement->fetchAll(\PDO::FETCH_ASSOC)
+        ));
+
+        $futureStatement = $model->connection->prepare(
+            "SELECT * FROM card_invoices
+             WHERE credit_card_id = :id AND due_date > :due_date AND deleted_at IS NULL
+             ORDER BY due_date ASC LIMIT :limit"
+        );
+        $futureStatement->bindValue(":id", $creditCardId, \PDO::PARAM_INT);
+        $futureStatement->bindValue(":due_date", $current->getDueDate());
+        $futureStatement->bindValue(":limit", $futureCount, \PDO::PARAM_INT);
+        $futureStatement->execute();
+        $future = array_map(
+            fn($row) => static::hydrate($row),
+            $futureStatement->fetchAll(\PDO::FETCH_ASSOC)
+        );
+
+        return ["past" => $past, "current" => $current, "future" => $future];
+    }
 }

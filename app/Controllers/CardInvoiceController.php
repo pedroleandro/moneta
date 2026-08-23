@@ -30,27 +30,31 @@ class CardInvoiceController extends Controller
             $userId = Auth::user()->id;
             $cards = CreditCard::findAllForUser($userId);
 
-            if (empty($cards)) {
-                echo $this->view->render("card_invoices/index", [
-                    "title" => "Faturas | " . APP_NAME,
-                    "active" => "faturas",
-                    "cards" => [],
-                    "invoices" => [],
-                    "selectedCardId" => null,
-                ]);
-                return;
+            $selectedCardId = !empty($_GET["cartao"]) ? (int)$_GET["cartao"] : ($cards[0]->getId() ?? null);
+            $showAll = !empty($_GET["tudo"]);
+
+            $window = ["past" => [], "current" => null, "future" => []];
+            $allInvoices = [];
+
+            if ($selectedCardId) {
+                $card = CreditCard::findByIdForUser($selectedCardId, $userId);
+
+                if ($card) {
+                    if ($showAll) {
+                        $allInvoices = CardInvoice::findAllForCard($selectedCardId);
+                    } else {
+                        $window = CardInvoice::findWindowForCard($selectedCardId, 1, 2);
+                    }
+                }
             }
-
-            $selectedCardId = !empty($_GET["cartao"]) ? (int)$_GET["cartao"] : $cards[0]->getId();
-
-            $card = CreditCard::findByIdForUser($selectedCardId, $userId);
-            $invoices = $card ? CardInvoice::findAllForCard($selectedCardId) : [];
 
             echo $this->view->render("card_invoices/index", [
                 "title" => "Faturas | " . APP_NAME,
                 "active" => "faturas",
                 "cards" => $cards,
-                "invoices" => $invoices,
+                "window" => $window,
+                "allInvoices" => $allInvoices,
+                "showAll" => $showAll,
                 "selectedCardId" => $selectedCardId,
             ]);
         } catch (\Throwable $exception) {
