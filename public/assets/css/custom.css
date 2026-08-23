@@ -34,6 +34,7 @@
 .btn-outline-primary:hover {
     background-color: var(--moneta-primary) !important;
     border-color: var(--moneta-primary) !important;
+    color: #fff !important;
 }
 
 .progress,
