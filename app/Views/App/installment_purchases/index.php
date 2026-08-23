@@ -1,6 +1,6 @@
 <?= $this->layout("layouts/app_layout", [
-    "title" => $title ?? "Compras Parceladas | " . APP_NAME,
-    "active" => "lancamentos",
+        "title" => $title ?? "Compras Parceladas | " . APP_NAME,
+        "active" => $active ?? "lancamentos-parcelamentos",
 ]) ?>
 
 <div class="container-xxl flex-grow-1 container-p-y">
