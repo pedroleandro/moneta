@@ -25,10 +25,24 @@ class DashboardController extends Controller
         try {
             $userId = Auth::user()->id;
 
-            $selectedMonth = $_GET["mes"] ?? date('Y-m');
+            $currentMonth = date('Y-m');
+            $firstMonth = Transaction::getFirstMonthForUser($userId);
+            $lastMonth = Transaction::getLastMonthForUser($userId);
+
+            $minMonth = ($firstMonth && $firstMonth < $currentMonth) ? $firstMonth : $currentMonth;
+            $maxMonth = ($lastMonth && $lastMonth > $currentMonth) ? $lastMonth : $currentMonth;
+
+            $selectedMonth = $_GET["mes"] ?? $currentMonth;
 
             if (!preg_match('/^\d{4}-\d{2}$/', $selectedMonth)) {
-                $selectedMonth = date('Y-m');
+                $selectedMonth = $currentMonth;
+            }
+
+            if ($selectedMonth < $minMonth) {
+                $selectedMonth = $minMonth;
+            }
+            if ($selectedMonth > $maxMonth) {
+                $selectedMonth = $maxMonth;
             }
 
             $selectedPersonId = !empty($_GET["pessoa"]) ? (int)$_GET["pessoa"] : null;
@@ -57,21 +71,6 @@ class DashboardController extends Controller
             $recentTransactions = Transaction::findRecentForUser($userId, 6);
             $upcomingInvoices = CardInvoice::findUpcomingForUser($userId, 5);
 
-            $firstMonth = Transaction::getFirstMonthForUser($userId);
-            $lastMonth = Transaction::getLastMonthForUser($userId);
-            $monthOptions = $this->buildMonthOptions($firstMonth, $lastMonth);
-
-            $hasSelected = false;
-            foreach ($monthOptions as $option) {
-                if ($option['value'] === $selectedMonth) {
-                    $hasSelected = true;
-                    break;
-                }
-            }
-            if (!$hasSelected) {
-                $selectedMonth = date('Y-m');
-            }
-
             echo $this->view->render("dashboard/dashboard", [
                 "title" => "Dashboard | " . APP_NAME,
                 "active" => "dashboard",
@@ -84,7 +83,8 @@ class DashboardController extends Controller
                 "recentTransactions" => $recentTransactions,
                 "upcomingInvoices" => $upcomingInvoices,
                 "selectedMonth" => $selectedMonth,
-                "monthOptions" => $monthOptions,
+                "minMonth" => $minMonth,
+                "maxMonth" => $maxMonth,
                 "cardUsers" => $cardUsers,
                 "selectedPersonId" => $selectedPersonId,
             ]);
@@ -106,60 +106,11 @@ class DashboardController extends Controller
                 "recentTransactions" => [],
                 "upcomingInvoices" => [],
                 "selectedMonth" => date('Y-m'),
-                "monthOptions" => [["value" => date('Y-m'), "label" => "Mês atual"]],
+                "minMonth" => date('Y-m'),
+                "maxMonth" => date('Y-m'),
                 "cardUsers" => [],
                 "selectedPersonId" => null,
             ]);
         }
-    }
-
-    /**
-     * Lista de meses pro seletor — do mês do primeiro lançamento até
-     * o mês do lançamento mais distante no futuro (última parcela
-     * de uma compra parcelada, por exemplo). Do mais recente pro
-     * mais antigo. Teto de 36 meses por segurança.
-     */
-    private function buildMonthOptions(?string $firstMonth, ?string $lastMonth): array
-    {
-        $today = new \DateTimeImmutable('first day of this month');
-
-        if (!$firstMonth) {
-            return [["value" => $today->format('Y-m'), "label" => $this->formatMonthLabel($today)]];
-        }
-
-        $first = new \DateTimeImmutable($firstMonth . '-01');
-        $last = $lastMonth ? new \DateTimeImmutable($lastMonth . '-01') : $today;
-
-        if ($last < $today) {
-            $last = $today;
-        }
-
-        $options = [];
-        $cursor = $last;
-        $count = 0;
-
-        while ($cursor >= $first && $count < 36) {
-            $options[] = ["value" => $cursor->format('Y-m'), "label" => $this->formatMonthLabel($cursor)];
-            $cursor = $cursor->modify('-1 month');
-            $count++;
-        }
-
-        return $options;
-    }
-
-    private function formatMonthLabel(\DateTimeImmutable $date): string
-    {
-        return ucfirst($this->monthNamePt((int)$date->format('n'))) . '/' . $date->format('Y');
-    }
-
-    private function monthNamePt(int $month): string
-    {
-        $names = [
-            1 => 'janeiro', 2 => 'fevereiro', 3 => 'março', 4 => 'abril',
-            5 => 'maio', 6 => 'junho', 7 => 'julho', 8 => 'agosto',
-            9 => 'setembro', 10 => 'outubro', 11 => 'novembro', 12 => 'dezembro',
-        ];
-
-        return $names[$month] ?? '';
     }
 }

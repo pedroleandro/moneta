@@ -8,14 +8,10 @@
         <h5 class="mb-0">Resumo do mês</h5>
         <div>
             <label for="mes" class="visually-hidden">Mês</label>
-            <select class="form-select" id="mes"
-                    onchange="updateDashboardFilters()">
-                <?php foreach ($monthOptions as $option): ?>
-                    <option value="<?= $option['value'] ?>" <?= $option['value'] === $selectedMonth ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($option['label']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <input type="month" class="form-control" id="mes"
+                   min="<?= $minMonth ?>" max="<?= $maxMonth ?>"
+                   value="<?= $selectedMonth ?>"
+                   onchange="updateDashboardFilters()"/>
         </div>
     </div>
 
