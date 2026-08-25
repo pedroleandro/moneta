@@ -537,6 +537,9 @@ class Transaction extends AbstractModel
         return $this->categoryIcon;
     }
 
+    /**
+     * @throws \Exception
+     */
     public static function getFirstMonthForUser(int $userId): ?string
     {
         $model = new static();
@@ -553,6 +556,9 @@ class Transaction extends AbstractModel
         return $firstDate ? (new \DateTimeImmutable($firstDate))->format('Y-m') : null;
     }
 
+    /**
+     * @throws \Exception
+     */
     public static function getLastMonthForUser(int $userId): ?string
     {
         $model = new static();
