@@ -161,6 +161,7 @@ class TransactionController extends Controller
                 if ($creditCard) {
                     $invoice = $creditCard->resolveInvoiceForDate($transaction->getTransactionDate());
                     $transaction->setCardInvoiceId($invoice->getId());
+                    $transaction->setTransactionDate($invoice->getDueDate());
                 }
 
                 $transaction->save();
@@ -347,6 +348,7 @@ class TransactionController extends Controller
                 if ($creditCard) {
                     $invoice = $creditCard->resolveInvoiceForDate($transaction->getTransactionDate());
                     $transaction->setCardInvoiceId($invoice->getId());
+                    $transaction->setTransactionDate($invoice->getDueDate());
                 } else {
                     $transaction->setCardInvoiceId(null);
                 }
