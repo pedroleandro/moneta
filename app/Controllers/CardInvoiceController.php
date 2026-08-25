@@ -85,12 +85,19 @@ class CardInvoiceController extends Controller
             $transactions = Transaction::findAllForInvoice($id);
 
             $personTotals = TransactionSplit::findTotalsForInvoice($id);
-
-            $sumSplit = array_sum(array_column($personTotals, 'total'));
-            $myOwnAmount = max(0, ($invoice->getTotalAmount() ?? 0) - $sumSplit);
+            $grossSplitSum = array_sum(array_column($personTotals, 'gross'));
+            $myOwnGross = max(0, ($invoice->getTotalAmount() ?? 0) - $grossSplitSum);
+            $selfPaid = CardInvoicePayment::getSelfPaidTotalForInvoice($id);
+            $myOwnAmount = max(0, $myOwnGross - $selfPaid);
 
             $payments = CardInvoicePayment::findAllForInvoice($id);
             $accounts = array_values(array_filter(BankAccount::findAllForUser($userId), fn($a) => $a->isActive()));
+
+            $cardUsers = $card ? \App\Models\CardUser::findAllForUser($userId) : [];
+            $cardUsers = array_values(array_filter(
+                $cardUsers,
+                static fn($cu) => in_array($invoice->getCreditCardId(), $cu->getLinkedCardIds(), true)
+            ));
 
             echo $this->view->render("card_invoices/show", [
                 "title" => "Fatura | " . APP_NAME,
@@ -102,6 +109,7 @@ class CardInvoiceController extends Controller
                 "accounts" => $accounts,
                 "personTotals" => $personTotals,
                 "myOwnAmount" => $myOwnAmount,
+                "cardUsers" => $cardUsers,
             ]);
         } catch (\Throwable $exception) {
             Logger::error("Falha ao carregar fatura", [

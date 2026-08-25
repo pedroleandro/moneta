@@ -124,17 +124,40 @@ class TransactionSplit extends AbstractModel
         $model = new static();
 
         $statement = $model->connection->prepare(
-            "SELECT cu.id AS card_user_id, cu.name AS card_user_name, SUM(ts.amount) AS total
-         FROM transaction_splits ts
-         INNER JOIN transactions t ON t.id = ts.transaction_id
-         INNER JOIN card_users cu ON cu.id = ts.card_user_id
-         WHERE t.card_invoice_id = :invoice_id AND t.deleted_at IS NULL
-         GROUP BY cu.id, cu.name
-         ORDER BY cu.name ASC"
+            "SELECT cu.id AS card_user_id, cu.name AS card_user_name,
+                    COALESCE(splits.total, 0) AS split_total,
+                    COALESCE(payments.total, 0) AS paid_total
+             FROM card_users cu
+             LEFT JOIN (
+                 SELECT ts.card_user_id, SUM(ts.amount) AS total
+                 FROM transaction_splits ts
+                 INNER JOIN transactions t ON t.id = ts.transaction_id
+                 WHERE t.card_invoice_id = :invoice_id_1 AND t.deleted_at IS NULL
+                 GROUP BY ts.card_user_id
+             ) splits ON splits.card_user_id = cu.id
+             LEFT JOIN (
+                 SELECT paying_card_user_id, SUM(amount) AS total
+                 FROM card_invoice_payments
+                 WHERE card_invoice_id = :invoice_id_2 AND paying_card_user_id IS NOT NULL
+                 GROUP BY paying_card_user_id
+             ) payments ON payments.paying_card_user_id = cu.id
+             WHERE splits.total IS NOT NULL OR payments.total IS NOT NULL
+             ORDER BY cu.name ASC"
         );
-        $statement->execute(["invoice_id" => $invoiceId]);
+        $statement->execute(["invoice_id_1" => $invoiceId, "invoice_id_2" => $invoiceId]);
 
-        return $statement->fetchAll(\PDO::FETCH_ASSOC);
+        $results = [];
+
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $results[] = [
+                "card_user_id" => $row["card_user_id"],
+                "card_user_name" => $row["card_user_name"],
+                "gross" => (float)$row["split_total"],
+                "total" => max(0, (float)$row["split_total"] - (float)$row["paid_total"]),
+            ];
+        }
+
+        return $results;
     }
 
     public static function getTotalOwedToUser(int $userId): float
@@ -157,24 +180,36 @@ class TransactionSplit extends AbstractModel
     {
         $model = new static();
 
-        $sql = "SELECT COALESCE(SUM(ts.amount), 0) AS total
-                FROM transaction_splits ts
-                INNER JOIN transactions t ON t.id = ts.transaction_id
-                INNER JOIN card_users cu ON cu.id = ts.card_user_id
-                WHERE cu.owner_user_id = :user_id
-                  AND t.deleted_at IS NULL
-                  AND DATE_FORMAT(t.transaction_date, '%Y-%m') = :year_month";
+        $splitSql = "SELECT COALESCE(SUM(ts.amount), 0) AS total
+                      FROM transaction_splits ts
+                      INNER JOIN transactions t ON t.id = ts.transaction_id
+                      INNER JOIN card_users cu ON cu.id = ts.card_user_id
+                      WHERE cu.owner_user_id = :user_id
+                        AND t.deleted_at IS NULL
+                        AND DATE_FORMAT(t.transaction_date, '%Y-%m') = :year_month";
+
+        $paidSql = "SELECT COALESCE(SUM(cip.amount), 0) AS total
+                     FROM card_invoice_payments cip
+                     INNER JOIN card_users cu ON cu.id = cip.paying_card_user_id
+                     WHERE cu.owner_user_id = :user_id
+                       AND DATE_FORMAT(cip.payment_date, '%Y-%m') = :year_month";
 
         $params = ["user_id" => $userId, "year_month" => $yearMonth];
 
         if ($cardUserId) {
-            $sql .= " AND ts.card_user_id = :card_user_id";
+            $splitSql .= " AND ts.card_user_id = :card_user_id";
+            $paidSql .= " AND cip.paying_card_user_id = :card_user_id";
             $params["card_user_id"] = $cardUserId;
         }
 
-        $statement = $model->connection->prepare($sql);
-        $statement->execute($params);
+        $splitStatement = $model->connection->prepare($splitSql);
+        $splitStatement->execute($params);
+        $owed = (float)$splitStatement->fetch()->total;
 
-        return (float)$statement->fetch()->total;
+        $paidStatement = $model->connection->prepare($paidSql);
+        $paidStatement->execute($params);
+        $paid = (float)$paidStatement->fetch()->total;
+
+        return max(0, $owed - $paid);
     }
 }

@@ -53,12 +53,12 @@
     </div>
 
     <div class="row">
-        <div class="col-md-7">
+        <div class="col-12 col-lg-7">
             <div class="card mb-6">
                 <div class="card-header">
                     <h6 class="mb-0">Lançamentos dessa fatura</h6>
                 </div>
-                <div class="table-responsive table-responsive-mobile text-nowrap">
+                <div class="table-responsive table-responsive-mobile">
                     <table class="table table-datatable">
                         <thead>
                         <tr>
@@ -162,6 +162,9 @@
                                 </td>
                                 <td data-label="Origem">
                                     <?= htmlspecialchars($payment->getBankAccountName() ?? 'Outro / Dinheiro') ?>
+                                    <?php if ($payment->getPayingPersonName()): ?>
+                                        <br><small class="text-body-secondary">Pago por <?= htmlspecialchars($payment->getPayingPersonName()) ?></small>
+                                    <?php endif; ?>
                                 </td>
                                 <td data-label="Valor" class="text-end">
                                     R$ <?= number_format($payment->getAmount(), 2, ',', '.') ?>
@@ -174,7 +177,7 @@
             </div>
         </div>
 
-        <div class="col-md-5">
+        <div class="col-12 col-lg-5">
             <?php if ($invoice->getRemainingAmount() > 0): ?>
                 <div class="card">
                     <div class="card-header">
@@ -227,6 +230,19 @@
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                            </div>
+
+                            <div class="mb-6">
+                                <label for="paying_person_id" class="form-label">Quem está pagando <small class="text-body-secondary">(opcional)</small></label>
+                                <select class="form-select" id="paying_person_id" name="paying_person_id">
+                                    <option value="">Eu mesmo</option>
+                                    <?php foreach ($cardUsers as $cardUser): ?>
+                                        <option value="<?= $cardUser->getId() ?>"><?= htmlspecialchars($cardUser->getName()) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-body-secondary">
+                                    Se for uma das pessoas que dividem esse cartão, o valor pago por ela abate do que ela deve.
+                                </small>
                             </div>
 
                             <div class="mb-6">

@@ -13,6 +13,7 @@ class CardInvoicePayment extends AbstractModel
     protected array $fillable = [
         "card_invoice_id",
         "bank_account_id",
+        "paying_card_user_id",
         "amount",
         "payment_date",
         "notes",
@@ -31,6 +32,8 @@ class CardInvoicePayment extends AbstractModel
     private ?int $id = null;
     private ?int $cardInvoiceId = null;
     private ?int $bankAccountId = null;
+    private ?int $payingCardUserId = null;
+    private ?string $payingPersonName = null;
     private ?float $amount = null;
     private ?string $paymentDate = null;
     private ?string $notes = null;
@@ -61,6 +64,17 @@ class CardInvoicePayment extends AbstractModel
     public function getBankAccountId(): ?int
     {
         return $this->bankAccountId;
+    }
+
+    public function setPayingCardUserId(?int $id): void
+    {
+        $this->payingCardUserId = $id;
+        $this->attributes["paying_card_user_id"] = $id;
+    }
+
+    public function getPayingCardUserId(): ?int
+    {
+        return $this->payingCardUserId;
     }
 
     public function setAmount(float|string $value): void
@@ -113,9 +127,10 @@ class CardInvoicePayment extends AbstractModel
         $model = new static();
 
         $statement = $model->connection->prepare(
-            "SELECT cip.*, ba.name AS bank_account_name
+            "SELECT cip.*, ba.name AS bank_account_name, cu.name AS paying_person_name
              FROM card_invoice_payments cip
              LEFT JOIN bank_accounts ba ON ba.id = cip.bank_account_id
+             LEFT JOIN card_users cu ON cu.id = cip.paying_card_user_id
              WHERE cip.card_invoice_id = :invoice_id
              ORDER BY cip.payment_date DESC"
         );
@@ -125,10 +140,12 @@ class CardInvoicePayment extends AbstractModel
 
         foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
             $bankAccountName = $row["bank_account_name"];
-            unset($row["bank_account_name"]);
+            $payingPersonName = $row["paying_person_name"];
+            unset($row["bank_account_name"], $row["paying_person_name"]);
 
             $instance = static::hydrate($row);
             $instance->bankAccountName = $bankAccountName;
+            $instance->payingPersonName = $payingPersonName;
             $results[] = $instance;
         }
 
@@ -140,5 +157,24 @@ class CardInvoicePayment extends AbstractModel
     public function getBankAccountName(): ?string
     {
         return $this->bankAccountName;
+    }
+
+    public function getPayingPersonName(): ?string
+    {
+        return $this->payingPersonName;
+    }
+
+    public static function getSelfPaidTotalForInvoice(int $invoiceId): float
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT COALESCE(SUM(amount), 0) AS total
+             FROM card_invoice_payments
+             WHERE card_invoice_id = :invoice_id AND paying_card_user_id IS NULL"
+        );
+        $statement->execute(["invoice_id" => $invoiceId]);
+
+        return (float)$statement->fetch()->total;
     }
 }
