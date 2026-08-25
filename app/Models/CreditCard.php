@@ -227,13 +227,24 @@ class CreditCard extends AbstractModel
     public function getAvailableLimit(): float
     {
         $statement = $this->connection->prepare(
-            "SELECT COALESCE(SUM(total_amount), 0) AS total
-         FROM card_invoices
-         WHERE credit_card_id = :id AND status != 'paga' AND deleted_at IS NULL"
+            "SELECT
+            COALESCE(SUM(ci.total_amount), 0) AS total_open,
+            COALESCE((
+                SELECT SUM(cip.amount)
+                FROM card_invoice_payments cip
+                INNER JOIN card_invoices ci2 ON ci2.id = cip.card_invoice_id
+                WHERE ci2.credit_card_id = :id_paid AND ci2.status != 'paga' AND ci2.deleted_at IS NULL
+            ), 0) AS total_paid
+         FROM card_invoices ci
+         WHERE ci.credit_card_id = :id_open AND ci.status != 'paga' AND ci.deleted_at IS NULL"
         );
-        $statement->execute(["id" => $this->getId()]);
+        $statement->execute([
+            "id_open" => $this->getId(),
+            "id_paid" => $this->getId(),
+        ]);
 
-        $used = (float)$statement->fetch()->total;
+        $row = $statement->fetch();
+        $used = max(0, (float)$row->total_open - (float)$row->total_paid);
 
         return max(0, $this->cardLimit - $used);
     }
