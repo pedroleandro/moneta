@@ -371,6 +371,16 @@ a:hover {
     padding: 1.25rem 1.25rem 1rem;
 }
 
+table.table-datatable td:nth-child(2) {
+    max-width: 20rem;
+    white-space: normal;
+    word-break: break-word;
+}
+
+table.table-datatable td[data-label="Valor"] {
+    white-space: nowrap;
+}
+
 
 /* =====================================================================
    8. RESPONSIVIDADE MOBILE (breakpoint em em, respeita zoom de fonte)
