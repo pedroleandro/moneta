@@ -53,8 +53,14 @@
                 <div class="row">
                     <div class="col-md-6 mb-6">
                         <label for="transaction_date" class="form-label">Data</label>
-                        <input type="date" class="form-control" id="transaction_date" name="transaction_date"
-                               value="<?= old('transaction_date', $transaction->getTransactionDate()) ?>" required/>
+                        <?php if ($transaction->getInstallmentPurchaseId()): ?>
+                            <input type="text" class="form-control" value="<?= date('d/m/Y', strtotime($transaction->getTransactionDate())) ?>" disabled/>
+                            <input type="hidden" name="transaction_date" value="<?= htmlspecialchars($transaction->getTransactionDate()) ?>"/>
+                            <small class="text-body-secondary">Data definida pelo parcelamento — não pode ser alterada aqui.</small>
+                        <?php else: ?>
+                            <input type="date" class="form-control" id="transaction_date" name="transaction_date"
+                                   value="<?= htmlspecialchars($transaction->getTransactionDate()) ?>" required/>
+                        <?php endif; ?>
                     </div>
 
                     <div class="col-md-6 mb-6">
@@ -68,51 +74,68 @@
 
                 <hr class="my-6"/>
 
-                <div class="mb-6">
-                    <label class="form-label d-block">Forma de Pagamento</label>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="payment_method" id="pm_account"
-                               value="account" <?= old('payment_method', $transaction->getBankAccountId() ? 'account' : 'card') === 'account' ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="pm_account">Conta Bancária</label>
+                <?php if ($transaction->getInstallmentPurchaseId()): ?>
+                    <?php
+                    $lockedCardName = '';
+                    foreach ($cards as $card) {
+                        if ($card->getId() === $transaction->getCreditCardId()) {
+                            $lockedCardName = $card->getName();
+                            break;
+                        }
+                    }
+                    ?>
+                    <div class="mb-6">
+                        <label class="form-label d-block">Forma de Pagamento</label>
+                        <input type="text" class="form-control" value="Cartão de Crédito — <?= htmlspecialchars($lockedCardName) ?>" disabled/>
+                        <input type="hidden" name="credit_card_id" value="<?= $transaction->getCreditCardId() ?>"/>
+                        <input type="hidden" name="payment_method" value="card"/>
+                        <small class="text-body-secondary">Essa parcela pertence a um parcelamento — o cartão não pode ser trocado aqui.</small>
                     </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="payment_method" id="pm_card"
-                               value="card" <?= old('payment_method', $transaction->getBankAccountId() ? 'account' : 'card') === 'card' ? 'checked' : '' ?>>
-                        <label class="form-check-label" for="pm_card">Cartão de Crédito</label>
+                    <?php $isCardSelected = true; ?>
+                <?php else: ?>
+                    <div class="mb-6">
+                        <label class="form-label d-block">Forma de Pagamento</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="payment_method" id="pm_account"
+                                   value="account" <?= old('payment_method', $transaction->getBankAccountId() ? 'account' : 'card') === 'account' ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="pm_account">Conta Bancária</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="payment_method" id="pm_card"
+                                   value="card" <?= old('payment_method', $transaction->getBankAccountId() ? 'account' : 'card') === 'card' ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="pm_card">Cartão de Crédito</label>
+                        </div>
                     </div>
-                </div>
-
-                <?php $isCardSelected = old('payment_method', $transaction->getBankAccountId() ? 'account' : 'card') === 'card'; ?>
-
-                <div class="row" id="wrapper-account" style="<?= $isCardSelected ? 'display:none;' : '' ?>">
-                    <div class="col-md-6 mb-6">
-                        <label for="bank_account_id" class="form-label">Conta Bancária</label>
-                        <select class="form-select" id="bank_account_id" name="bank_account_id">
-                            <option value="">Selecione...</option>
-                            <?php foreach ($accounts as $account): ?>
-                                <option value="<?= $account->getId() ?>"
-                                        <?= (string)old('bank_account_id', (string)$transaction->getBankAccountId()) === (string)$account->getId() ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($account->getName()) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <?php $isCardSelected = old('payment_method', $transaction->getBankAccountId() ? 'account' : 'card') === 'card'; ?>
+                    <div class="row" id="wrapper-account" style="<?= $isCardSelected ? 'display:none;' : '' ?>">
+                        <div class="col-md-6 mb-6">
+                            <label for="bank_account_id" class="form-label">Conta Bancária</label>
+                            <select class="form-select" id="bank_account_id" name="bank_account_id">
+                                <option value="">Selecione...</option>
+                                <?php foreach ($accounts as $account): ?>
+                                    <option value="<?= $account->getId() ?>"
+                                            <?= (string)old('bank_account_id', (string)$transaction->getBankAccountId()) === (string)$account->getId() ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($account->getName()) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
-                </div>
-
-                <div class="row" id="wrapper-card" style="<?= $isCardSelected ? '' : 'display:none;' ?>">
-                    <div class="col-md-6 mb-6">
-                        <label for="credit_card_id" class="form-label">Cartão</label>
-                        <select class="form-select" id="credit_card_id" name="credit_card_id">
-                            <option value="">Selecione...</option>
-                            <?php foreach ($cards as $card): ?>
-                                <option value="<?= $card->getId() ?>"
-                                        <?= (string)old('credit_card_id', (string)$transaction->getCreditCardId()) === (string)$card->getId() ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($card->getName()) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="row" id="wrapper-card" style="<?= $isCardSelected ? '' : 'display:none;' ?>">
+                        <div class="col-md-6 mb-6">
+                            <label for="credit_card_id" class="form-label">Cartão</label>
+                            <select class="form-select" id="credit_card_id" name="credit_card_id">
+                                <option value="">Selecione...</option>
+                                <?php foreach ($cards as $card): ?>
+                                    <option value="<?= $card->getId() ?>"
+                                            <?= (string)old('credit_card_id', (string)$transaction->getCreditCardId()) === (string)$card->getId() ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($card->getName()) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
-                </div>
+                <?php endif; ?>
 
                 <div id="splits-section" style="<?= $isCardSelected ? '' : 'display:none;' ?>">
                     <hr class="my-6"/>
