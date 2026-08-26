@@ -311,4 +311,50 @@ class CardUser extends AbstractModel
 
         return false;
     }
+
+    public static function validateSplitAssignments(
+        array $personIds,
+        array $amounts,
+        int $userId,
+        int $creditCardId,
+        float $totalAmount
+    ): array|string {
+        if (empty($personIds)) {
+            return [];
+        }
+
+        $splits = [];
+        $seenPersonIds = [];
+        $sum = 0.0;
+
+        foreach ($personIds as $index => $personId) {
+            $personId = (int)$personId;
+            $amount = (float)str_replace(",", ".", (string)($amounts[$index] ?? "0"));
+
+            if (!$personId || $amount <= 0) {
+                continue;
+            }
+
+            if (in_array($personId, $seenPersonIds, true)) {
+                return "Você adicionou a mesma pessoa mais de uma vez na divisão.";
+            }
+
+            $cardUser = static::findByIdForUser($personId, $userId);
+
+            if (!$cardUser || !in_array($creditCardId, $cardUser->getLinkedCardIds(), true)) {
+                return "Uma das pessoas selecionadas não está vinculada a esse cartão.";
+            }
+
+            $seenPersonIds[] = $personId;
+            $sum += $amount;
+            $splits[] = ["card_user_id" => $personId, "amount" => $amount];
+        }
+
+        if ($sum > $totalAmount) {
+            return "A soma da divisão (R$ " . number_format($sum, 2, ',', '.') .
+                ") não pode ultrapassar o valor total (R$ " . number_format($totalAmount, 2, ',', '.') . ").";
+        }
+
+        return $splits;
+    }
 }
