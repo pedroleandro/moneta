@@ -311,6 +311,12 @@ class TransactionController extends Controller
                 return;
             }
 
+            if ($transaction->getInstallmentPurchaseId()) {
+                $data["transaction_date"] = $transaction->getTransactionDate();
+                $data["credit_card_id"] = $transaction->getCreditCardId();
+                $data["bank_account_id"] = null;
+            }
+
             $paymentCheck = $this->validatePaymentMethod($data, $userId);
 
             if (is_string($paymentCheck)) {
@@ -339,7 +345,7 @@ class TransactionController extends Controller
                 return;
             }
 
-            $dateCheck = $this->validateTransactionDate($data, $bankAccount, $creditCard);
+            $dateCheck = $this->validateTransactionDate($data, $bankAccount, $creditCard, $transaction);
             if (is_string($dateCheck)) {
                 flash_old($data);
                 Message::error($dateCheck);
@@ -375,18 +381,20 @@ class TransactionController extends Controller
                 }
 
                 if ($creditCard) {
-                    $invoice = $creditCard->resolveInvoiceForDate($transaction->getTransactionDate());
+                    if (!$transaction->getInstallmentPurchaseId()) {
+                        $invoice = $creditCard->resolveInvoiceForDate($transaction->getTransactionDate());
 
-                    if ($invoice->getStatus() === \App\Models\CardInvoice::STATUS_PAID) {
-                        $connection->rollBack();
-                        flash_old($data);
-                        Message::error("Essa data cai numa fatura que já foi paga. Não é possível atualizar lançamento nela.");
-                        redirect("/lancamentos/{$id}/editar");
-                        return;
+                        if ($invoice->getStatus() === \App\Models\CardInvoice::STATUS_PAID) {
+                            $connection->rollBack();
+                            flash_old($data);
+                            Message::error("Essa data cai numa fatura que já foi paga. Não é possível atualizar lançamento nela.");
+                            redirect("/lancamentos/{$id}/editar");
+                            return;
+                        }
+
+                        $transaction->setCardInvoiceId($invoice->getId());
+                        $transaction->setTransactionDate($invoice->getDueDate());
                     }
-
-                    $transaction->setCardInvoiceId($invoice->getId());
-                    $transaction->setTransactionDate($invoice->getDueDate());
                 } else {
                     $transaction->setCardInvoiceId(null);
                 }
@@ -631,55 +639,17 @@ class TransactionController extends Controller
         return $category;
     }
 
-    private function validateSplits(array $data, int $userId, int $creditCardId, float $totalAmount): array|string
-    {
-        $personIds = $data["split_card_user_id"] ?? [];
-        $amounts = $data["split_amount"] ?? [];
-
-        if (empty($personIds)) {
-            return [];
-        }
-
-        $splits = [];
-        $seenPersonIds = [];
-        $sum = 0.0;
-
-        foreach ($personIds as $index => $personId) {
-            $personId = (int)$personId;
-            $amount = (float)str_replace(",", ".", (string)($amounts[$index] ?? "0"));
-
-            if (!$personId || $amount <= 0) {
-                continue;
-            }
-
-            if (in_array($personId, $seenPersonIds, true)) {
-                return "Você adicionou a mesma pessoa mais de uma vez na divisão.";
-            }
-
-            $cardUser = CardUser::findByIdForUser($personId, $userId);
-
-            if (!$cardUser || !in_array($creditCardId, $cardUser->getLinkedCardIds(), true)) {
-                return "Uma das pessoas selecionadas não está vinculada a esse cartão.";
-            }
-
-            $seenPersonIds[] = $personId;
-            $sum += $amount;
-            $splits[] = ["card_user_id" => $personId, "amount" => $amount];
-        }
-
-        if ($sum > $totalAmount) {
-            return "A soma da divisão (R$ " . number_format($sum, 2, ',', '.') .
-                ") não pode ultrapassar o valor do lançamento (R$ " . number_format($totalAmount, 2, ',', '.') . ").";
-        }
-
-        return $splits;
-    }
-
     private function validateTransactionDate(
         array $data,
         ?BankAccount $bankAccount,
-        ?CreditCard $creditCard
+        ?CreditCard $creditCard,
+        ?Transaction $existingTransaction = null
     ): true|string {
+
+        if ($existingTransaction && $existingTransaction->getInstallmentPurchaseId()) {
+            return true;
+        }
+
         $dateStr = $data["transaction_date"] ?? "";
         $status = $data["status"] ?? Transaction::STATUS_PENDING;
         $type = $data["type"] ?? "";
