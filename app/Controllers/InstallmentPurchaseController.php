@@ -118,8 +118,6 @@ class InstallmentPurchaseController extends Controller
                 return;
             }
 
-            // Explícito e amigável — não deixa nem chegar no Model,
-            // pra dar uma mensagem clara em vez do popup do navegador.
             $installmentsCount = (int)($data["installments_count"] ?? 0);
 
             if ($installmentsCount < 2) {
@@ -130,6 +128,14 @@ class InstallmentPurchaseController extends Controller
             }
 
             $purchaseDate = $data["purchase_date"] ?? date("Y-m-d");
+
+            $dateCheck = $this->validatePurchaseDate($purchaseDate, $card);
+            if (is_string($dateCheck)) {
+                flash_old($data);
+                Message::error($dateCheck);
+                redirect("/parcelamentos/novo");
+                return;
+            }
 
             $purchase = new InstallmentPurchase();
             $purchase->fill([
@@ -155,7 +161,13 @@ class InstallmentPurchaseController extends Controller
                 return;
             }
 
-            $splitsResult = $this->validateSplits($data, $userId, $creditCardId, $purchase->getTotalAmount());
+            $splitsResult = CardUser::validateSplitAssignments(
+                $data["split_card_user_id"] ?? [],
+                $data["split_amount"] ?? [],
+                $userId,
+                $creditCardId,
+                $purchase->getTotalAmount()
+            );
 
             if (is_string($splitsResult)) {
                 flash_old($data);
@@ -166,6 +178,14 @@ class InstallmentPurchaseController extends Controller
 
             $firstReferenceMonth = $card->getReferenceMonthForPurchase($purchaseDate);
             $firstInvoice = $card->resolveInvoiceForReferenceMonth($firstReferenceMonth);
+
+            if ($firstInvoice->getStatus() === \App\Models\CardInvoice::STATUS_PAID) {
+                flash_old($data);
+                Message::error("Essa data cai numa fatura que já foi paga. Escolha uma data mais recente.");
+                redirect("/parcelamentos/novo");
+                return;
+            }
+
             $purchase->setFirstInstallmentDate($firstInvoice->getDueDate());
 
             $connection->beginTransaction();
@@ -257,46 +277,28 @@ class InstallmentPurchaseController extends Controller
         }
     }
 
-    private function validateSplits(array $data, int $userId, int $creditCardId, float $totalAmount): array|string
+    private function validatePurchaseDate(string $purchaseDate, CreditCard $card): true|string
     {
-        $personIds = $data["split_card_user_id"] ?? [];
-        $amounts = $data["split_amount"] ?? [];
+        $date = \DateTime::createFromFormat("Y-m-d", $purchaseDate);
 
-        if (empty($personIds)) {
-            return [];
+        if (!$date) {
+            return true;
         }
 
-        $splits = [];
-        $seenPersonIds = [];
-        $sum = 0.0;
+        $today = new \DateTime("today");
+        $date->setTime(0, 0, 0);
 
-        foreach ($personIds as $index => $personId) {
-            $personId = (int)$personId;
-            $amount = (float)str_replace(",", ".", (string)($amounts[$index] ?? "0"));
-
-            if (!$personId || $amount <= 0) {
-                continue;
-            }
-
-            if (in_array($personId, $seenPersonIds, true)) {
-                return "Você adicionou a mesma pessoa mais de uma vez na divisão.";
-            }
-
-            $cardUser = CardUser::findByIdForUser($personId, $userId);
-
-            if (!$cardUser || !in_array($creditCardId, $cardUser->getLinkedCardIds(), true)) {
-                return "Uma das pessoas selecionadas não está vinculada a esse cartão.";
-            }
-
-            $seenPersonIds[] = $personId;
-            $sum += $amount;
-            $splits[] = ["card_user_id" => $personId, "amount" => $amount];
+        if ($date > $today) {
+            return "A data da compra não pode ser no futuro.";
         }
 
-        if ($sum > $totalAmount) {
-            return "A soma da divisão não pode ultrapassar o valor total da compra.";
+        $earliest = $card->getEarliestAllowedDate();
+
+        if ($purchaseDate < $earliest) {
+            $earliestFormatted = date("d/m/Y", strtotime($earliest));
+            return "A data da compra está muito no passado. A data mais antiga permitida é {$earliestFormatted}.";
         }
 
-        return $splits;
+        return true;
     }
 }
