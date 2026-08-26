@@ -124,10 +124,17 @@ class TransactionController extends Controller
             }
 
             $fundsCheck = $this->validateSufficientFunds($data, $bankAccount, $creditCard);
-
             if (is_string($fundsCheck)) {
                 flash_old($data);
                 Message::error($fundsCheck);
+                redirect("/lancamentos/novo");
+                return;
+            }
+
+            $dateCheck = $this->validateTransactionDate($data, $bankAccount, $creditCard);
+            if (is_string($dateCheck)) {
+                flash_old($data);
+                Message::error($dateCheck);
                 redirect("/lancamentos/novo");
                 return;
             }
@@ -160,6 +167,15 @@ class TransactionController extends Controller
 
                 if ($creditCard) {
                     $invoice = $creditCard->resolveInvoiceForDate($transaction->getTransactionDate());
+
+                    if ($invoice->getStatus() === \App\Models\CardInvoice::STATUS_PAID) {
+                        $connection->rollBack();
+                        flash_old($data);
+                        Message::error("Essa data cai numa fatura que já foi paga. Não é possível adicionar lançamento nela.");
+                        redirect("/lancamentos/novo");
+                        return;
+                    }
+
                     $transaction->setCardInvoiceId($invoice->getId());
                     $transaction->setTransactionDate($invoice->getDueDate());
                 }
@@ -167,7 +183,13 @@ class TransactionController extends Controller
                 $transaction->save();
 
                 if ($creditCard) {
-                    $splitsResult = $this->validateSplits($data, $userId, $creditCard->getId(), $transaction->getAmount());
+                    $splitsResult = CardUser::validateSplitAssignments(
+                        $data["split_card_user_id"] ?? [],
+                        $data["split_amount"] ?? [],
+                        $userId,
+                        $creditCard->getId(),
+                        $transaction->getAmount()
+                    );
 
                     if (is_string($splitsResult)) {
                         $connection->rollBack();
@@ -310,10 +332,17 @@ class TransactionController extends Controller
             }
 
             $fundsCheck = $this->validateSufficientFunds($data, $bankAccount, $creditCard, $transaction);
-
             if (is_string($fundsCheck)) {
                 flash_old($data);
                 Message::error($fundsCheck);
+                redirect("/lancamentos/{$id}/editar");
+                return;
+            }
+
+            $dateCheck = $this->validateTransactionDate($data, $bankAccount, $creditCard);
+            if (is_string($dateCheck)) {
+                flash_old($data);
+                Message::error($dateCheck);
                 redirect("/lancamentos/{$id}/editar");
                 return;
             }
@@ -347,6 +376,15 @@ class TransactionController extends Controller
 
                 if ($creditCard) {
                     $invoice = $creditCard->resolveInvoiceForDate($transaction->getTransactionDate());
+
+                    if ($invoice->getStatus() === \App\Models\CardInvoice::STATUS_PAID) {
+                        $connection->rollBack();
+                        flash_old($data);
+                        Message::error("Essa data cai numa fatura que já foi paga. Não é possível atualizar lançamento nela.");
+                        redirect("/lancamentos/{$id}/editar");
+                        return;
+                    }
+
                     $transaction->setCardInvoiceId($invoice->getId());
                     $transaction->setTransactionDate($invoice->getDueDate());
                 } else {
@@ -356,7 +394,13 @@ class TransactionController extends Controller
                 TransactionSplit::deleteAllForTransaction($id);
 
                 if ($creditCard) {
-                    $splitsResult = $this->validateSplits($data, $userId, $creditCard->getId(), $transaction->getAmount());
+                    $splitsResult = CardUser::validateSplitAssignments(
+                        $data["split_card_user_id"] ?? [],
+                        $data["split_amount"] ?? [],
+                        $userId,
+                        $creditCard->getId(),
+                        $transaction->getAmount()
+                    );
 
                     if (is_string($splitsResult)) {
                         $connection->rollBack();
@@ -524,11 +568,12 @@ class TransactionController extends Controller
     }
 
     private function validateSufficientFunds(
-        array $data,
+        array        $data,
         ?BankAccount $bankAccount,
-        ?CreditCard $creditCard,
+        ?CreditCard  $creditCard,
         ?Transaction $existingTransaction = null
-    ): true|string {
+    ): true|string
+    {
         $type = $data["type"] ?? "";
         $status = $data["status"] ?? Transaction::STATUS_PENDING;
         $amount = (float)str_replace(",", ".", (string)($data["amount"] ?? "0"));
@@ -628,5 +673,76 @@ class TransactionController extends Controller
         }
 
         return $splits;
+    }
+
+    private function validateTransactionDate(
+        array $data,
+        ?BankAccount $bankAccount,
+        ?CreditCard $creditCard
+    ): true|string {
+        $dateStr = $data["transaction_date"] ?? "";
+        $status = $data["status"] ?? Transaction::STATUS_PENDING;
+        $type = $data["type"] ?? "";
+
+        $date = \DateTime::createFromFormat("Y-m-d", $dateStr);
+
+        if (!$date) {
+            return true;
+        }
+
+        $today = new \DateTime("today");
+        $date->setTime(0, 0, 0);
+
+        if ($type === Transaction::TYPE_INCOME) {
+            return $this->validateIncomeDate($date, $today, $status, $dateStr);
+        }
+
+        if ($date > $today) {
+            return "A data do lançamento não pode ser no futuro.";
+        }
+
+        if ($date < $today && $status !== Transaction::STATUS_CONFIRMED) {
+            return "Lançamentos com data no passado precisam estar como Confirmado.";
+        }
+
+        if ($date < $today) {
+            $earliest = $creditCard
+                ? $creditCard->getEarliestAllowedDate()
+                : (new \DateTimeImmutable("first day of last month"))->format("Y-m-d");
+
+            if ($dateStr < $earliest) {
+                $earliestFormatted = date("d/m/Y", strtotime($earliest));
+                return "A data está muito no passado. A data mais antiga permitida é {$earliestFormatted}.";
+            }
+        }
+
+        return true;
+    }
+
+    private function validateIncomeDate(\DateTime $date, \DateTime $today, string $status, string $dateStr): true|string
+    {
+        if ($date > $today && $status === Transaction::STATUS_CONFIRMED) {
+            return "Não é possível confirmar uma receita com data no futuro.";
+        }
+
+        if ($date < $today) {
+            $earliest = (new \DateTimeImmutable("first day of last month"))->format("Y-m-d");
+
+            if ($dateStr < $earliest) {
+                $earliestFormatted = date("d/m/Y", strtotime($earliest));
+                return "A data está muito no passado. A data mais antiga permitida é {$earliestFormatted}.";
+            }
+        }
+
+        if ($date > $today) {
+            $latest = (new \DateTimeImmutable("last day of next month"))->format("Y-m-d");
+
+            if ($dateStr > $latest) {
+                $latestFormatted = date("d/m/Y", strtotime($latest));
+                return "A data está muito no futuro. A data mais distante permitida é {$latestFormatted}.";
+            }
+        }
+
+        return true;
     }
 }
