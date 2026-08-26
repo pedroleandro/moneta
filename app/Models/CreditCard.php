@@ -341,4 +341,32 @@ class CreditCard extends AbstractModel
     {
         return $this->resolveInvoiceForReferenceMonth($this->getReferenceMonthForPurchase($purchaseDate));
     }
+
+    /**
+     * @throws Exception
+     */
+    public function getEarliestAllowedDate(): string
+    {
+        $todayReferenceMonth = $this->getReferenceMonthForPurchase(date('Y-m-d'));
+        $previousReferenceMonth = (new \DateTimeImmutable($todayReferenceMonth))
+            ->modify('-1 month')
+            ->format('Y-m-01');
+
+        return $this->getClosingDateForReferenceMonth($previousReferenceMonth);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getClosingDateForReferenceMonth(string $referenceMonth): string
+    {
+        $referenceDate = new \DateTimeImmutable($referenceMonth);
+        $day = min($this->closingDay, (int)$referenceDate->format('t'));
+
+        return $referenceDate->setDate(
+            (int)$referenceDate->format('Y'),
+            (int)$referenceDate->format('m'),
+            $day
+        )->format('Y-m-d');
+    }
 }
