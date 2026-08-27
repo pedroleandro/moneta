@@ -509,3 +509,28 @@ table.table-datatable td[data-label="Valor"] {
         align-items: flex-start !important;
     }
 }
+
+#terms-conditions.is-valid ~ .form-check-label,
+#terms-conditions.is-invalid ~ .form-check-label {
+    color: inherit !important;
+}
+
+#terms-conditions ~ .form-check-label a {
+    color: var(--moneta-primary);
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+#terms-conditions ~ .form-check-label a:hover {
+    color: var(--moneta-primary-dark);
+}
+
+#terms-conditions.is-valid {
+    border-color: #d9dee3;
+    background-color: #fff;
+}
+
+#terms-conditions.is-valid:checked {
+    border-color: var(--moneta-primary);
+    background-color: var(--moneta-primary);
+}
