@@ -82,6 +82,8 @@
 <!-- Main JS -->
 
 <script src="<?= assets_sneat('/assets/js/main.js') ?>"></script>
+<script src="<?= assets('/js/form-validation.js') ?>"></script>
+<script src="<?= assets('/js/no-paste.js') ?>"></script>
 
 <!-- Page JS -->
 
