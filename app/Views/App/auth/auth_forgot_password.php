@@ -23,7 +23,7 @@
 
                     <?= \App\Core\Message::render() ?>
 
-                    <form id="formAuthentication" class="mb-6" action="<?= url('/redefinir-senha') ?>" method="post">
+                    <form id="formAuthentication" class="mb-6 needs-validation" action="<?= url('/redefinir-senha') ?>" method="post">
 
                         <?= csrf_input() ?>
 
@@ -35,7 +35,10 @@
                                     id="email"
                                     name="email"
                                     placeholder="Informe seu e-mail cadastrado"
+                                    required
+                                    data-error-required="Precisamos do seu e-mail para enviar o link de redefinição."
                                     autofocus/>
+                            <div class="invalid-feedback"></div>
                         </div>
 
                         <div class="cf-turnstile mb-8"

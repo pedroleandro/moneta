@@ -22,7 +22,8 @@
 
                     <?= \App\Core\Message::render() ?>
 
-                    <form id="formAuthentication" class="mb-6" action="<?= url('/resetar-senha') ?>" method="post">
+                    <form id="formAuthentication" class="mb-6 needs-validation" action="<?= url('/resetar-senha') ?>"
+                          method="post">
 
                         <?= csrf_input() ?>
                         <input type="hidden" name="token" value="<?= htmlspecialchars($token ?? '') ?>"/>
@@ -33,14 +34,19 @@
                                 <input
                                         type="password"
                                         id="password"
-                                        class="form-control"
+                                        class="form-control no-paste"
                                         name="password"
                                         required
-                                        placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+                                        minlength="8"
+                                        data-error-required="Digite sua nova senha."
+                                        data-error-minlength="A senha precisa ter pelo menos 8 caracteres."
+                                        data-feedback-id="password-feedback"
+                                        placeholder="············"
                                         autofocus/>
                                 <span class="input-group-text cursor-pointer"><i
                                             class="icon-base bx bx-hide"></i></span>
                             </div>
+                            <div class="invalid-feedback d-block" id="password-feedback"></div>
                         </div>
 
                         <div class="mb-6 form-password-toggle">
@@ -49,12 +55,16 @@
                                 <input
                                         type="password"
                                         id="password-confirm"
-                                        class="form-control"
+                                        class="form-control no-paste"
                                         name="password-confirm"
-                                        placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"/>
+                                        required
+                                        data-error-required="Digite a nova senha novamente para confirmar."
+                                        data-feedback-id="password-confirm-feedback"
+                                        placeholder="············"/>
                                 <span class="input-group-text cursor-pointer"><i
                                             class="icon-base bx bx-hide"></i></span>
                             </div>
+                            <div class="invalid-feedback d-block" id="password-confirm-feedback"></div>
                         </div>
 
                         <button class="btn btn-primary d-grid w-100">Redefinir senha</button>

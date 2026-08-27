@@ -1,7 +1,6 @@
 <?= $this->layout("auth/auth_app", [
         "title" => $title ?? "Entrar | " . APP_NAME,
 ]) ?>
-
 <!-- Content -->
 <div class="container-xxl">
     <div class="authentication-wrapper authentication-basic container-p-y">
@@ -9,7 +8,6 @@
             <!-- Register -->
             <div class="card px-sm-6 px-0">
                 <div class="card-body">
-
                     <!-- Logo -->
                     <div class="app-brand justify-content-center">
                         <a href="<?= url('/entrar') ?>" class="app-brand-link">
@@ -18,18 +16,12 @@
                         </a>
                     </div>
                     <!-- /Logo -->
-
                     <h4 class="mb-1">Bem-vindo ao Moneta!</h4>
                     <p class="mb-6">Por favor, faça login na sua conta e comece a gerenciar suas contas.</p>
-
                     <?= \App\Core\Message::render() ?>
-
-                    <form id="formAuthentication" class="mb-6" action="<?= url('/entrar') ?>" method="post">
-
+                    <form id="formAuthentication" class="mb-6 needs-validation" action="<?= url('/entrar') ?>" method="post">
                         <input type="hidden" name="cf-turnstile-response" class="turnstile-token-field"/>
-
                         <?= csrf_input() ?>
-
                         <div class="mb-6">
                             <label for="email" class="form-label">Email</label>
                             <input
@@ -40,7 +32,9 @@
                                     value="<?= old('email') ?>"
                                     placeholder="Informe seu email"
                                     required
+                                    data-error-required="Informe seu e-mail para entrar."
                                     autofocus/>
+                            <div class="invalid-feedback"></div>
                         </div>
                         <div class="mb-6 form-password-toggle">
                             <label class="form-label" for="password">Senha</label>
@@ -50,12 +44,14 @@
                                         id="password"
                                         class="form-control"
                                         name="password"
-                                        placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
+                                        placeholder="············"
                                         required
+                                        data-error-required="Informe sua senha."
+                                        data-feedback-id="password-feedback"
                                         aria-describedby="password"/>
-                                <span class="input-group-text cursor-pointer"><i
-                                            class="icon-base bx bx-hide"></i></span>
+                                <span class="input-group-text cursor-pointer"><i class="icon-base bx bx-hide"></i></span>
                             </div>
+                            <div class="invalid-feedback d-block" id="password-feedback"></div>
                         </div>
                         <div class="mb-8">
                             <div class="d-flex justify-content-between">
@@ -68,12 +64,10 @@
                                 </a>
                             </div>
                         </div>
-
                         <div class="mb-6">
                             <button class="btn btn-primary d-grid w-100" type="submit">Entrar</button>
                         </div>
                     </form>
-
                     <div class="cf-turnstile mb-8"
                          data-sitekey="<?= TURNSTILE_SITE_KEY ?>"
                          data-theme="light"
@@ -82,11 +76,9 @@
                          data-callback="onTurnstileVerified"
                          data-expired-callback="onTurnstileExpired">
                     </div>
-
                     <div class="divider my-6">
                         <div class="divider-text">ou</div>
                     </div>
-
                     <div class="d-grid gap-3 mb-6">
                         <form action="<?= url('/entrar/google') ?>" method="post">
                             <?= csrf_input() ?>
@@ -105,7 +97,6 @@
                                 </svg> Continuar com Google
                             </button>
                         </form>
-
                         <form action="<?= url('/entrar/facebook') ?>" method="post" class="mt-3">
                             <?= csrf_input() ?>
                             <input type="hidden" name="cf-turnstile-response" class="turnstile-token-field"/>
@@ -114,7 +105,6 @@
                             </button>
                         </form>
                     </div>
-
                     <p class="text-center">
                         <span>Novo em nossa plataforma?</span>
                         <a href="<?= url('/cadastrar') ?>">
