@@ -7,6 +7,7 @@ use App\Core\Controller;
 use App\Core\DatabaseSessionHandler;
 use App\Core\Email;
 use App\Core\Logger;
+use App\Core\LoginSecurity;
 use App\Core\Message;
 use App\Core\Session;
 use App\Core\SessionTimeoutMiddleware;
@@ -44,7 +45,6 @@ class AuthController extends Controller
     public function authenticate(?array $data): void
     {
         $this->validateCsrfToken($data, "/entrar");
-
         $email = trim($data["email"] ?? "");
         $password = $data["password"] ?? "";
         $ip = $_SERVER["REMOTE_ADDR"] ?? "0.0.0.0";
@@ -98,8 +98,15 @@ class AuthController extends Controller
 
         AuditLog::record(LogEvent::LOGIN_SUCCESS, $user->getId());
 
-        clear_old();
+        LoginSecurity::checkAndNotify(
+            $user->getId(),
+            $user->getEmail(),
+            $user->getName(),
+            $ip,
+            $_SERVER["HTTP_USER_AGENT"] ?? ""
+        );
 
+        clear_old();
         redirect("/dashboard");
     }
 
@@ -357,17 +364,17 @@ class AuthController extends Controller
 
         $user->clearResetToken();
         $user->save();
-
         AuditLog::record(LogEvent::PASSWORD_CHANGED, $user->getId());
-
         DatabaseSessionHandler::destroyAllForUser($user->getId());
-
         Auth::logout();
 
+        new Session();
         Message::success("Senha redefinida com sucesso. Faça login.");
+
         redirect("/entrar");
     }
 
+    #[NoReturn]
     public function verifyEmail(?array $data): void
     {
         $token = $data["token"] ?? "";
@@ -395,6 +402,9 @@ class AuthController extends Controller
         redirect("/entrar");
     }
 
+    /**
+     * @throws RandomException
+     */
     public function resendVerification(?array $data): void
     {
         $this->validateCsrfToken($data, "/entrar");
