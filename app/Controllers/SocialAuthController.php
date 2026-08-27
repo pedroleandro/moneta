@@ -6,6 +6,7 @@ use App\Core\AuditLog;
 use App\Core\Controller;
 use App\Core\LogEvent;
 use App\Core\Logger;
+use App\Core\LoginSecurity;
 use App\Core\Message;
 use App\Core\Session;
 use App\Core\SessionTimeoutMiddleware;
@@ -228,7 +229,6 @@ class SocialAuthController extends Controller
             $user = (new User())->find($socialAccount->getUserId());
 
             if (!$user) {
-                // O vínculo social existe mas o usuário foi excluído do banco.
                 Message::error("Essa conta não existe mais. Faça um novo cadastro.");
                 redirect("/entrar");
                 return;
@@ -278,10 +278,16 @@ class SocialAuthController extends Controller
         $session = new Session();
         $session->regenerate();
         $session->set("auth", $user->toSessionData());
-
         SessionTimeoutMiddleware::start();
-
         AuditLog::record(LogEvent::LOGIN_SUCCESS, $user->getId(), ["via" => $provider]);
+
+        LoginSecurity::checkAndNotify(
+            $user->getId(),
+            $user->getEmail(),
+            $user->getName(),
+            $_SERVER["REMOTE_ADDR"] ?? "0.0.0.0",
+            $_SERVER["HTTP_USER_AGENT"] ?? ""
+        );
 
         redirect("/dashboard");
     }
