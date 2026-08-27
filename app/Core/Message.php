@@ -80,17 +80,32 @@ class Message
     public static function render(): ?string
     {
         $flash = self::get();
+
         if (!$flash) {
             return null;
         }
 
+        $icons = [
+            'primary' => 'bx-info-circle',
+            'success' => 'bx-check-circle',
+            'warning' => 'bx-error',
+            'danger' => 'bx-x-circle',
+            'info' => 'bx-info-circle',
+            'secondary' => 'bx-bell',
+            'light' => 'bx-note',
+            'dark' => 'bx-cog',
+        ];
+
         $html = '';
+
         foreach ($flash as $item) {
+            $icon = $icons[$item['type']] ?? 'bx-info-circle';
             $code = $item['code']
                 ? "<strong>" . self::escape($item['code']) . "</strong> "
                 : "";
 
-            $html .= "<div class='alert alert-{$item['type']} alert-dismissible fade show' role='alert'>
+            $html .= "<div class='alert alert-{$item['type']} alert-dismissible fade show navbar-flash-message' role='alert'>
+                    <i class='icon-base bx {$icon} me-1'></i>
                     {$code}" . self::escape($item['message']) . "
                     <button type='button' class='btn-close' data-bs-dismiss='alert'></button>
                   </div>";
