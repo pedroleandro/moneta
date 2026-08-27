@@ -231,15 +231,8 @@
 
                 <div class="navbar-nav-right d-flex align-items-center justify-content-end" id="navbar-collapse">
                     <!-- Search -->
-                    <div class="navbar-nav align-items-center me-auto">
-                        <div class="nav-item d-flex align-items-center">
-                            <span class="w-px-22 h-px-22"><i class="icon-base bx bx-search icon-md"></i></span>
-                            <input
-                                    type="text"
-                                    class="form-control border-0 shadow-none ps-1 ps-sm-2 d-md-block d-none"
-                                    placeholder="Pesquisar..."
-                                    aria-label="Pesquisar..."/>
-                        </div>
+                    <div class="navbar-nav align-items-center me-auto flash-message-wrapper">
+                        <?= \App\Core\Message::render() ?>
                     </div>
                     <!-- /Search -->
 
@@ -363,6 +356,7 @@
 
 <!-- Page JS -->
 <script src="<?= assets_sneat('/assets/js/dashboards-analytics.js') ?>"></script>
+<script src="<?= assets_sneat('/assets/js/navbar-flash-autodismiss.js') ?>"></script>
 
 <!-- Place this tag before closing body tag for github widget button. -->
 <script async defer src="https://buttons.github.io/buttons.js"></script>

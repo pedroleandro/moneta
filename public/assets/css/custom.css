@@ -534,3 +534,39 @@ table.table-datatable td[data-label="Valor"] {
     border-color: var(--moneta-primary);
     background-color: var(--moneta-primary);
 }
+
+.flash-message-wrapper {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.flash-message-wrapper .alert {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.9rem;
+    margin: 0;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.08);
+}
+
+.flash-message-wrapper .alert .btn-close {
+    position: static !important;
+    width: 0.6rem !important;
+    height: 0.6rem !important;
+    padding: 0.35rem !important;
+    margin: 0 0 0 0.6rem !important;
+    background-size: 0.5rem !important;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+@media (max-width: 47.9988em) {
+    .flash-message-wrapper .alert {
+        white-space: normal;
+        border-radius: 0.5rem;
+    }
+}
