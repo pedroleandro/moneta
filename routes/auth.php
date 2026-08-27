@@ -35,6 +35,10 @@ $router->get("/entrar/facebook/callback", "SocialAuthController@handleFacebookCa
 $router->get("/cadastrar/confirmar-social", "SocialAuthController@confirmSocialSignup");
 $router->post("/cadastrar/confirmar-social", "SocialAuthController@storeSocialSignup");
 
+$router->get('/seguranca/verificar-login/{token}', 'LoginVerificationController@show');
+$router->post('/seguranca/verificar-login/{token}/confirmar', 'LoginVerificationController@confirm');
+$router->post('/seguranca/verificar-login/{token}/reportar', 'LoginVerificationController@reportSuspicious');
+
 /*
 |--------------------------------------------------------------------------
 | Rotas Autenticadas

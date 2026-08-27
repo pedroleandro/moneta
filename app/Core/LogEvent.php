@@ -18,6 +18,7 @@ final class LogEvent
     public const PASSWORD_CHANGED = "password_changed";
     public const PASSWORD_RESET_REQUESTED = "password_reset_requested";
     public const ACCOUNT_DELETED = "account_deleted";
+    public const SUSPICIOUS_LOGIN_REPORTED = "suspicious_login_reported";
 
     // Login Social
     public const SOCIAL_ACCOUNT_LINKED = "social_account_linked";
