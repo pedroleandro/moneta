@@ -17,16 +17,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (reachedEnd) {
             acceptBtn.disabled = false;
-            if (aviso) aviso.textContent = 'Muito obrigado por ler! Você já pode aceitar.';
+            if (aviso) aviso.textContent = 'Obrigado por ler! Você já pode aceitar.';
         }
     }
+
+    let acceptedViaModal = false;
+
+    checkbox.addEventListener('click', function () {
+        if (checkbox.checked && !acceptedViaModal) {
+            checkbox.checked = false;
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        } else if (!checkbox.checked) {
+            acceptedViaModal = false;
+        }
+    });
 
     scrollArea.addEventListener('scroll', checkScrollEnd);
 
     modalEl.addEventListener('shown.bs.modal', function () {
         scrollArea.scrollTop = 0;
         acceptBtn.disabled = true;
-        if (aviso) aviso.textContent = 'Leia de forma completa os termos';
+        if (aviso) aviso.textContent = 'Role até o final para habilitar o botão de aceite.';
         checkScrollEnd();
     });
 
