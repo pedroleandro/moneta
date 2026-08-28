@@ -91,7 +91,7 @@
                                        data-error-required="Você precisa aceitar os termos para criar sua conta."/>
                                 <label class="form-check-label" for="terms-conditions">
                                     Eu aceito os
-                                    <a href="">Políticas de Privacidade e Termos</a>
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#modal-termos">Políticas de Privacidade e Termos</a>
                                 </label>
                                 <div class="invalid-feedback"></div>
                             </div>
@@ -109,6 +109,29 @@
                         <button class="btn btn-primary d-grid w-100">Cadastrar</button>
                     </form>
 
+                    <!-- Modal de Termos -->
+                    <div class="modal fade" id="modal-termos" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+                        <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-md-down">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Termos de Uso e Política de Privacidade</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body" id="termos-scroll-area" style="max-height: 60vh;">
+                                    <?= $this->fetch('legal/_termos_conteudo') ?>
+                                </div>
+                                <div class="modal-footer flex-column align-items-stretch">
+                                    <small class="text-body-secondary text-center mb-2" id="termos-aviso">
+                                        Leia de forma completa os termos.
+                                    </small>
+                                    <button type="button" class="btn btn-primary" id="btn-aceitar-termos" disabled>
+                                        Li e aceito os termos
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <p class="text-center">
                         <span>Ja tem uma conta?</span>
                         <a href="<?= url('/entrar') ?>">
@@ -122,3 +145,5 @@
     </div>
 </div>
 <!-- / Content -->
+
+<script src="<?= assets('/js/terms-modal.js') ?>"></script>

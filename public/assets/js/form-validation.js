@@ -40,11 +40,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function ensureFeedbackEl(field) {
-        // Caso especial: campo tem um id de feedback explícito
-        // marcado via data-feedback-id (usado quando o campo está
-        // dentro de um input-group e a mensagem precisa ficar FORA
-        // do grupo, pra não quebrar o layout do botão de mostrar
-        // senha).
         if (field.dataset.feedbackId) {
             const explicit = document.getElementById(field.dataset.feedbackId);
             if (explicit) return explicit;
@@ -85,7 +80,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const fields = form.querySelectorAll('input, select, textarea');
 
         fields.forEach(function (field) {
-            field.addEventListener('blur', function () {
+            field.addEventListener('blur', function (event) {
+                const target = event.relatedTarget;
+
+                if (!target) {
+                    validateField(field);
+                    return;
+                }
+
+                const isLink = target.tagName === 'A';
+                const isOutsideForm = !form.contains(target);
+
+                if (isLink || isOutsideForm) return;
+
                 validateField(field);
             });
 

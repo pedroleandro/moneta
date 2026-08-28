@@ -39,6 +39,8 @@ $router->get('/seguranca/verificar-login/{token}', 'LoginVerificationController@
 $router->post('/seguranca/verificar-login/{token}/confirmar', 'LoginVerificationController@confirm');
 $router->post('/seguranca/verificar-login/{token}/reportar', 'LoginVerificationController@reportSuspicious');
 
+$router->get("/termos", "LegalController@show");
+
 /*
 |--------------------------------------------------------------------------
 | Rotas Autenticadas
