@@ -570,3 +570,23 @@ table.table-datatable td[data-label="Valor"] {
         border-radius: 0.5rem;
     }
 }
+
+@media (max-width: 47.9988em) {
+    #modal-termos .modal-dialog {
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 100vh !important;
+    }
+    #modal-termos .modal-content {
+        height: 100% !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+    }
+    #modal-termos .modal-body {
+        max-height: none !important;
+        flex: 1 1 auto !important;
+        overflow-y: auto !important;
+    }
+}
