@@ -457,11 +457,12 @@ table.table-datatable td[data-label="Valor"] {
         content: none;
     }
 
-    /* Ações não precisa de rótulo nem de 2 colunas — os ícones já
-       são autoexplicativos, só alinha tudo à direita. */
     .table-responsive-mobile tbody tr td[data-label="Ações"] {
-        grid-template-columns: 1fr;
-        justify-items: end;
+        display: flex !important;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .table-responsive-mobile tbody tr td[data-label="Ações"]::before {
