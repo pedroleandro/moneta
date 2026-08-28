@@ -284,7 +284,7 @@ class CreditCard extends AbstractModel
 
         $referenceMonth = $date->format('Y-m-01');
 
-        if ($day > $this->closingDay) {
+        if ($day >= $this->closingDay) {
             $referenceMonth = $date->modify('first day of next month')->format('Y-m-01');
         }
 
