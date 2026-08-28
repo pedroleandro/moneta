@@ -2,9 +2,24 @@
 
 use JetBrains\PhpStorm\NoReturn;
 
+function appBaseUrl(): string
+{
+    if (empty($_SERVER['HTTP_HOST'])) {
+        return rtrim(APP_URL, '/');
+    }
+
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || ($_SERVER['SERVER_PORT'] ?? null) == 443
+        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+    $scheme = $isHttps ? 'https' : 'http';
+
+    return $scheme . '://' . $_SERVER['HTTP_HOST'];
+}
+
 function url(string $path = null): string
 {
-    $base = APP_URL;
+    $base = appBaseUrl();
 
     if ($path) {
         return $base . '/' . ltrim($path, '/');
@@ -22,7 +37,7 @@ function redirect(string $path): void
 
 function assets(string $path = null): string
 {
-    $base = APP_URL . "/public/assets";
+    $base = appBaseUrl() . "/public/assets";
 
     if ($path) {
         return $base . '/' . ltrim($path, '/');
@@ -33,7 +48,7 @@ function assets(string $path = null): string
 
 function assets_mazer(string $path = null): string
 {
-    $base = APP_URL . "/resources/themes/dist";
+    $base = appBaseUrl() . "/resources/themes/dist";
 
     if ($path) {
         return $base . '/' . ltrim($path, '/');
@@ -44,7 +59,7 @@ function assets_mazer(string $path = null): string
 
 function assets_sneat(string $path = null): string
 {
-    $base = APP_URL . "/resources/themes/sneat/sneat-bootstrap-html-admin-template-free";
+    $base = appBaseUrl() . "/resources/themes/sneat/sneat-bootstrap-html-admin-template-free";
 
     if ($path) {
         return $base . '/' . ltrim($path, '/');
