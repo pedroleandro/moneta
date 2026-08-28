@@ -158,7 +158,7 @@ class Category extends AbstractModel
             "SELECT * FROM categories
              WHERE (user_id = :user_id OR user_id IS NULL)
                AND deleted_at IS NULL
-             ORDER BY type ASC, name ASC"
+             ORDER BY name ASC"
         );
         $statement->execute(["user_id" => $userId]);
 
