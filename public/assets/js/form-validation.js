@@ -79,12 +79,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const fields = form.querySelectorAll('input, select, textarea');
 
+        const submitBtn = Array.from(form.querySelectorAll('button')).find(function (btn) {
+            return (btn.getAttribute('type') || 'submit') === 'submit';
+        });
+
+        function updateSubmitState() {
+            if (submitBtn) {
+                submitBtn.disabled = !form.checkValidity();
+            }
+        }
+
+        updateSubmitState();
+
         fields.forEach(function (field) {
             field.addEventListener('blur', function (event) {
                 const target = event.relatedTarget;
 
                 if (!target) {
                     validateField(field);
+                    updateSubmitState();
                     return;
                 }
 
@@ -94,12 +107,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (isLink || isOutsideForm) return;
 
                 validateField(field);
+                updateSubmitState();
             });
 
             field.addEventListener('input', function () {
                 if (field.classList.contains('is-invalid') || field.classList.contains('is-valid')) {
                     validateField(field);
                 }
+                updateSubmitState();
             });
 
             field.addEventListener('change', function () {
@@ -108,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if ((field.type === 'checkbox' || field.type === 'radio') && field.required) {
                     validateField(field);
                 }
+                updateSubmitState();
             });
         });
 

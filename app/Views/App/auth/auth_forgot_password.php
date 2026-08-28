@@ -23,7 +23,8 @@
 
                     <?= \App\Core\Message::render() ?>
 
-                    <form id="formAuthentication" class="mb-6 needs-validation" action="<?= url('/redefinir-senha') ?>" method="post">
+                    <form id="formAuthentication" class="mb-6 needs-validation" action="<?= url('/redefinir-senha') ?>"
+                          method="post">
 
                         <?= csrf_input() ?>
 
@@ -50,7 +51,7 @@
                              data-expired-callback="onTurnstileExpired">
                         </div>
 
-                        <button class="btn btn-primary d-grid w-100">Enviar</button>
+                        <button class="btn btn-primary d-grid w-100" disabled>Enviar</button>
                     </form>
                     <div class="text-center">
                         <a href="<?= url('/entrar') ?>" class="d-flex justify-content-center">

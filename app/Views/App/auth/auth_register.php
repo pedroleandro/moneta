@@ -106,7 +106,7 @@
                              data-expired-callback="onTurnstileExpired">
                         </div>
 
-                        <button class="btn btn-primary d-grid w-100">Cadastrar</button>
+                        <button class="btn btn-primary d-grid w-100" disabled>Cadastrar</button>
                     </form>
 
                     <!-- Modal de Termos -->

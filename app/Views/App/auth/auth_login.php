@@ -65,7 +65,7 @@
                             </div>
                         </div>
                         <div class="mb-6">
-                            <button class="btn btn-primary d-grid w-100" type="submit">Entrar</button>
+                            <button class="btn btn-primary d-grid w-100" type="submit" disabled>Entrar</button>
                         </div>
                     </form>
                     <div class="cf-turnstile mb-8"
