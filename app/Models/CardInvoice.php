@@ -127,19 +127,11 @@ class CardInvoice extends AbstractModel
         return (float)$statement->fetch()->total;
     }
 
-    /**
-     * Quanto ainda falta pagar dessa fatura.
-     */
     public function getRemainingAmount(): float
     {
-        return max(0, $this->recalculateTotal() - $this->getPaidAmount());
+        return max(0, ($this->totalAmount ?? 0) - $this->getPaidAmount());
     }
 
-    /**
-     * Recalcula total_amount a partir da soma real dos lançamentos
-     * vinculados — chamado sempre que um lançamento entra/sai/muda
-     * de valor dentro dessa fatura, mantendo o total sempre correto.
-     */
     public function recalculateTotal(): float
     {
         $statement = $this->connection->prepare(

@@ -51,7 +51,7 @@
                     <td data-label="Fechamento"><?= date('d/m/Y', strtotime($invoice->getClosingDate())) ?></td>
                     <td data-label="Vencimento"><?= date('d/m/Y', strtotime($invoice->getDueDate())) ?></td>
                     <td data-label="Total" class="text-end">
-                        R$ <?= number_format($invoice->getTotalAmount() ?? 0, 2, ',', '.') ?>
+                        R$ <?= number_format($invoice->getRemainingAmount(), 2, ',', '.') ?>
                     </td>
                     <td data-label="Status">
                         <span class="badge <?= $badgeClass ?> text-capitalize"><?= $invoice->getStatus() ?></span>
