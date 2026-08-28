@@ -1,6 +1,18 @@
 document.addEventListener('DOMContentLoaded', function () {
     if (typeof jQuery === 'undefined' || typeof jQuery.fn.DataTable === 'undefined') return;
 
+    function removeAccents(str) {
+        if (!str) return '';
+        return str.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    jQuery.fn.dataTable.ext.type.search.string = function (data) {
+        return removeAccents(data);
+    };
+    jQuery.fn.dataTable.ext.type.search.html = function (data) {
+        return removeAccents(typeof data === 'string' ? data.replace(/<.*?>/g, '') : data);
+    };
+
     jQuery('table.table-datatable').each(function () {
         if (jQuery(this).find('tbody tr.table-empty-row').length > 0) return;
 
@@ -33,6 +45,14 @@ document.addEventListener('DOMContentLoaded', function () {
             columnDefs: [
                 {orderable: false, targets: -1},
             ],
+            initComplete: function () {
+                const api = this.api();
+                const searchInput = jQuery('div.dataTables_filter input', api.table().container());
+
+                searchInput.off('keyup.moneta input.moneta').on('keyup.moneta input.moneta', function () {
+                    api.search(removeAccents(this.value)).draw();
+                });
+            },
         });
     });
 });
