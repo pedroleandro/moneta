@@ -193,15 +193,29 @@ class CardInvoiceController extends Controller
             }
 
             $card = CreditCard::find($invoice->getCreditCardId());
+
+            $payingCardUserId = !empty($data["paying_card_user_id"]) ? (int)$data["paying_card_user_id"] : null;
+
+            if ($payingCardUserId) {
+                $payingPerson = \App\Models\CardUser::findByIdForUser($payingCardUserId, $userId);
+                if (!$payingPerson || !in_array($invoice->getCreditCardId(), $payingPerson->getLinkedCardIds(), true)) {
+                    Message::error("A pessoa selecionada não está vinculada a esse cartão.");
+                    redirect("/faturas/{$id}");
+                    return;
+                }
+            }
+
             $paymentDate = $data["payment_date"] ?? date("Y-m-d");
 
             $connection->beginTransaction();
 
             try {
                 $payment = new CardInvoicePayment();
+
                 $payment->fill([
                     "card_invoice_id" => $id,
                     "bank_account_id" => $bankAccountId,
+                    "paying_card_user_id" => $payingCardUserId,
                     "amount" => $amount,
                     "payment_date" => $paymentDate,
                     "notes" => $data["notes"] ?? null,
