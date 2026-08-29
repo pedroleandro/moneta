@@ -310,50 +310,54 @@ class Transaction extends AbstractModel
     public static function findAllForUser(int $userId, ?string $type = null): array
     {
         $model = new static();
-
         $sql = "SELECT t.*, c.name AS category_name, c.color AS category_color,
-                       ba.name AS bank_account_name, cc.name AS credit_card_name
-                FROM transactions t
-                LEFT JOIN categories c ON c.id = t.category_id
-                LEFT JOIN bank_accounts ba ON ba.id = t.bank_account_id
-                LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
-                WHERE t.user_id = :user_id AND t.deleted_at IS NULL";
-
+                   ba.name AS bank_account_name, cc.name AS credit_card_name,
+                   ip.first_installment_date AS purchase_date,
+                   ci.due_date AS invoice_due_date
+            FROM transactions t
+            LEFT JOIN categories c ON c.id = t.category_id
+            LEFT JOIN bank_accounts ba ON ba.id = t.bank_account_id
+            LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
+            LEFT JOIN installment_purchases ip ON ip.id = t.installment_purchase_id
+            LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
+            WHERE t.user_id = :user_id AND t.deleted_at IS NULL";
         $params = ["user_id" => $userId];
-
         if ($type) {
             $sql .= " AND t.type = :type";
             $params["type"] = $type;
         }
-
-        $sql .= " ORDER BY t.transaction_date DESC, t.id DESC";
-
+        $sql .= " ORDER BY
+                    COALESCE(ci.due_date, ip.first_installment_date, t.transaction_date) ASC,
+                    COALESCE(ip.first_installment_date, t.transaction_date) DESC,
+                    t.created_at DESC,
+                    t.description ASC,
+                    t.id DESC";
         $statement = $model->connection->prepare($sql);
         $statement->execute($params);
-
         $results = [];
-
         foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
             $extra = [
                 "category_name" => $row["category_name"],
                 "category_color" => $row["category_color"],
                 "bank_account_name" => $row["bank_account_name"],
                 "credit_card_name" => $row["credit_card_name"],
+                "purchase_date" => $row["purchase_date"],
+                "invoice_due_date" => $row["invoice_due_date"],
             ];
             unset(
                 $row["category_name"], $row["category_color"],
-                $row["bank_account_name"], $row["credit_card_name"]
+                $row["bank_account_name"], $row["credit_card_name"],
+                $row["purchase_date"], $row["invoice_due_date"]
             );
-
             $instance = static::hydrate($row);
             $instance->categoryName = $extra["category_name"];
             $instance->categoryColor = $extra["category_color"];
             $instance->bankAccountName = $extra["bank_account_name"];
             $instance->creditCardName = $extra["credit_card_name"];
-
+            $instance->purchaseDate = $extra["purchase_date"];
+            $instance->invoiceDueDate = $extra["invoice_due_date"];
             $results[] = $instance;
         }
-
         return $results;
     }
 
@@ -361,6 +365,10 @@ class Transaction extends AbstractModel
     private ?string $categoryColor = null;
     private ?string $bankAccountName = null;
     private ?string $creditCardName = null;
+
+    private ?string $purchaseDate = null;
+
+    private ?string $invoiceDueDate = null;
 
     public function getCategoryName(): ?string
     {
@@ -380,6 +388,16 @@ class Transaction extends AbstractModel
     public function getCreditCardName(): ?string
     {
         return $this->creditCardName;
+    }
+
+    public function getPurchaseDate(): ?string
+    {
+        return $this->purchaseDate;
+    }
+
+    public function getInvoiceDueDate(): ?string
+    {
+        return $this->invoiceDueDate;
     }
 
     public static function findByIdForUser(int $id, int $userId): ?self

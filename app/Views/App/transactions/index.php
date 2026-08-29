@@ -25,12 +25,13 @@
             <table class="table table-datatable">
                 <thead>
                 <tr>
-                    <th>Data</th>
+                    <th>Data da Compra</th>
                     <th>Descrição</th>
                     <th>Categoria</th>
                     <th>Conta/Cartão</th>
                     <th class="text-end">Valor</th>
                     <th>Status</th>
+                    <th>Vencimento</th>
                     <th class="text-end">Ações</th>
                 </tr>
                 </thead>
@@ -43,8 +44,8 @@
 
                 <?php foreach ($transactions as $transaction): ?>
                     <tr>
-                        <td data-label="Data">
-                            <?= date('d/m/Y', strtotime($transaction->getTransactionDate())) ?>
+                        <td data-label="Data da Compra">
+                            <?= date('d/m/Y', strtotime($transaction->getPurchaseDate() ?? $transaction->getTransactionDate())) ?>
                         </td>
                         <td data-label="Descrição">
                             <?= htmlspecialchars($transaction->getDescription()) ?>
@@ -68,6 +69,13 @@
                                 <span class="badge bg-label-success">Confirmado</span>
                             <?php else: ?>
                                 <span class="badge bg-label-warning">Pendente</span>
+                            <?php endif; ?>
+                        </td>
+                        <td data-label="Vencimento">
+                            <?php if ($transaction->getCreditCardId() && $transaction->getInvoiceDueDate()): ?>
+                                <?= date('d/m/Y', strtotime($transaction->getInvoiceDueDate())) ?>
+                            <?php else: ?>
+                                <span class="text-body-secondary">—</span>
                             <?php endif; ?>
                         </td>
                         <td data-label="Ações" class="text-end">
