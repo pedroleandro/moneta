@@ -226,9 +226,13 @@
                                         <small class="d-block"><?= htmlspecialchars($transaction->getCategoryName() ?? ($transaction->getType() === 'transferencia' ? 'Transferência' : '-')) ?></small>
                                         <h6 class="fw-normal mb-0"><?= htmlspecialchars($transaction->getDescription()) ?></h6>
                                     </div>
+                                    <?php
+                                    $isPositive = $transaction->getType() === 'receita'
+                                            || ($transaction->getType() === 'transferencia' && !$transaction->isTransferOutgoing());
+                                    ?>
                                     <div class="user-progress d-flex align-items-center gap-2">
-                                        <h6 class="fw-normal mb-0 <?= $transaction->getType() === 'receita' ? 'text-success' : '' ?>">
-                                            <?= $transaction->getType() === 'receita' ? '+' : '-' ?>
+                                        <h6 class="fw-normal mb-0 <?= $isPositive ? 'text-success' : '' ?>">
+                                            <?= $isPositive ? '+' : '-' ?>
                                             R$ <?= number_format($transaction->getAmount(), 2, ',', '.') ?>
                                         </h6>
                                     </div>

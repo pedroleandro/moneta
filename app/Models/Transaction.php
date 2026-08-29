@@ -62,6 +62,8 @@ class Transaction extends AbstractModel
     private ?string $updatedAt = null;
     private ?string $deletedAt = null;
 
+    private ?int $transferFromAccountId = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -256,6 +258,16 @@ class Transaction extends AbstractModel
         return $this->createdAt;
     }
 
+    public function getTransferFromAccountId(): ?int
+    {
+        return $this->transferFromAccountId;
+    }
+
+    public function isTransferOutgoing(): bool
+    {
+        return $this->bankAccountId === $this->transferFromAccountId;
+    }
+
     public function belongsToUser(int $userId): bool
     {
         return $this->getUserId() === $userId;
@@ -313,13 +325,15 @@ class Transaction extends AbstractModel
         $sql = "SELECT t.*, c.name AS category_name, c.color AS category_color,
                    ba.name AS bank_account_name, cc.name AS credit_card_name,
                    ip.first_installment_date AS purchase_date,
-                   ci.due_date AS invoice_due_date
+                   ci.due_date AS invoice_due_date,
+                   at.from_account_id AS transfer_from_account_id
             FROM transactions t
             LEFT JOIN categories c ON c.id = t.category_id
             LEFT JOIN bank_accounts ba ON ba.id = t.bank_account_id
             LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
             LEFT JOIN installment_purchases ip ON ip.id = t.installment_purchase_id
             LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
+            LEFT JOIN account_transfers at ON at.id = t.transfer_id
             WHERE t.user_id = :user_id AND t.deleted_at IS NULL";
         $params = ["user_id" => $userId];
         if ($type) {
@@ -343,11 +357,12 @@ class Transaction extends AbstractModel
                 "credit_card_name" => $row["credit_card_name"],
                 "purchase_date" => $row["purchase_date"],
                 "invoice_due_date" => $row["invoice_due_date"],
+                "transfer_from_account_id" => $row["transfer_from_account_id"],
             ];
             unset(
                 $row["category_name"], $row["category_color"],
                 $row["bank_account_name"], $row["credit_card_name"],
-                $row["purchase_date"], $row["invoice_due_date"]
+                $row["purchase_date"], $row["invoice_due_date"], $row["transfer_from_account_id"]
             );
             $instance = static::hydrate($row);
             $instance->categoryName = $extra["category_name"];
@@ -356,6 +371,7 @@ class Transaction extends AbstractModel
             $instance->creditCardName = $extra["credit_card_name"];
             $instance->purchaseDate = $extra["purchase_date"];
             $instance->invoiceDueDate = $extra["invoice_due_date"];
+            $instance->transferFromAccountId = $extra["transfer_from_account_id"];
             $results[] = $instance;
         }
         return $results;
@@ -504,24 +520,23 @@ class Transaction extends AbstractModel
     public static function findRecentForUser(int $userId, int $limit = 6): array
     {
         $model = new static();
-
         $statement = $model->connection->prepare(
             "SELECT t.*, c.name AS category_name, c.icon AS category_icon, c.color AS category_color,
-                    ba.name AS bank_account_name, cc.name AS credit_card_name
-             FROM transactions t
-             LEFT JOIN categories c ON c.id = t.category_id
-             LEFT JOIN bank_accounts ba ON ba.id = t.bank_account_id
-             LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
-             WHERE t.user_id = :user_id AND t.deleted_at IS NULL
-             ORDER BY t.created_at DESC, t.id DESC
-             LIMIT :limit"
+                ba.name AS bank_account_name, cc.name AS credit_card_name,
+                at.from_account_id AS transfer_from_account_id
+         FROM transactions t
+         LEFT JOIN categories c ON c.id = t.category_id
+         LEFT JOIN bank_accounts ba ON ba.id = t.bank_account_id
+         LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
+         LEFT JOIN account_transfers at ON at.id = t.transfer_id
+         WHERE t.user_id = :user_id AND t.deleted_at IS NULL
+         ORDER BY t.created_at DESC, t.id DESC
+         LIMIT :limit"
         );
         $statement->bindValue(":user_id", $userId, \PDO::PARAM_INT);
         $statement->bindValue(":limit", $limit, \PDO::PARAM_INT);
         $statement->execute();
-
         $results = [];
-
         foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
             $extra = [
                 "category_name" => $row["category_name"],
@@ -529,22 +544,21 @@ class Transaction extends AbstractModel
                 "category_color" => $row["category_color"],
                 "bank_account_name" => $row["bank_account_name"],
                 "credit_card_name" => $row["credit_card_name"],
+                "transfer_from_account_id" => $row["transfer_from_account_id"],
             ];
             unset(
                 $row["category_name"], $row["category_icon"], $row["category_color"],
-                $row["bank_account_name"], $row["credit_card_name"]
+                $row["bank_account_name"], $row["credit_card_name"], $row["transfer_from_account_id"]
             );
-
             $instance = static::hydrate($row);
             $instance->categoryName = $extra["category_name"];
             $instance->categoryIcon = $extra["category_icon"];
             $instance->categoryColor = $extra["category_color"];
             $instance->bankAccountName = $extra["bank_account_name"];
             $instance->creditCardName = $extra["credit_card_name"];
-
+            $instance->transferFromAccountId = $extra["transfer_from_account_id"];
             $results[] = $instance;
         }
-
         return $results;
     }
 

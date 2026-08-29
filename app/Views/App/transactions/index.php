@@ -60,8 +60,12 @@
                         <td data-label="Conta/Cartão">
                             <?= htmlspecialchars($transaction->getBankAccountName() ?? $transaction->getCreditCardName() ?? '-') ?>
                         </td>
-                        <td data-label="Valor" class="text-end <?= $transaction->getType() === 'receita' ? 'text-success' : 'text-danger' ?>">
-                            <?= $transaction->getType() === 'receita' ? '+' : '-' ?>
+                        <?php
+                        $isPositive = $transaction->getType() === 'receita'
+                                || ($transaction->getType() === 'transferencia' && !$transaction->isTransferOutgoing());
+                        ?>
+                        <td data-label="Valor" class="text-end <?= $isPositive ? 'text-success' : 'text-danger' ?>">
+                            <?= $isPositive ? '+' : '-' ?>
                             R$ <?= number_format($transaction->getAmount(), 2, ',', '.') ?>
                         </td>
                         <td data-label="Status">
