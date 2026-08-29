@@ -259,6 +259,28 @@
                 height: 300,
                 toolbar: {show: false},
                 fontFamily: 'inherit',
+                locales: [{
+                    name: 'pt-br',
+                    options: {
+                        months: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+                        shortMonths: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                        days: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'],
+                        shortDays: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+                        toolbar: {
+                            exportToSVG: 'Baixar SVG',
+                            exportToPNG: 'Baixar PNG',
+                            exportToCSV: 'Baixar CSV',
+                            menu: 'Menu',
+                            selection: 'Selecionar',
+                            selectionZoom: 'Zoom da Seleção',
+                            zoomIn: 'Aumentar',
+                            zoomOut: 'Diminuir',
+                            pan: 'Navegação',
+                            reset: 'Redefinir Zoom',
+                        }
+                    }
+                }],
+                defaultLocale: 'pt-br',
             },
             colors: ['#28c76f', '#dc3545'],
             dataLabels: {enabled: false},

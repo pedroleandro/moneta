@@ -428,16 +428,15 @@ class Transaction extends AbstractModel
     public static function getMonthlyTotal(int $userId, string $type, string $yearMonth): float
     {
         $model = new static();
-
         $statement = $model->connection->prepare(
-            "SELECT COALESCE(SUM(amount), 0) AS total
-             FROM transactions
-             WHERE user_id = :user_id AND type = :type AND status = 'confirmado'
-               AND DATE_FORMAT(transaction_date, '%Y-%m') = :year_month
-               AND deleted_at IS NULL"
+            "SELECT COALESCE(SUM(t.amount), 0) AS total
+         FROM transactions t
+         LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
+         WHERE t.user_id = :user_id AND t.type = :type AND t.status = 'confirmado'
+           AND t.deleted_at IS NULL
+           AND DATE_FORMAT(COALESCE(ci.due_date, t.transaction_date), '%Y-%m') = :year_month"
         );
         $statement->execute(["user_id" => $userId, "type" => $type, "year_month" => $yearMonth]);
-
         return (float)$statement->fetch()->total;
     }
 
@@ -465,15 +464,16 @@ class Transaction extends AbstractModel
 
         $statement = $model->connection->prepare(
             "SELECT c.name AS category_name, c.color AS category_color, c.icon AS category_icon,
-                    SUM(t.amount) AS total
-             FROM transactions t
-             INNER JOIN categories c ON c.id = t.category_id
-             WHERE t.user_id = :user_id AND t.type = 'despesa' AND t.status = 'confirmado'
-               AND DATE_FORMAT(t.transaction_date, '%Y-%m') = :year_month
-               AND t.deleted_at IS NULL
-             GROUP BY c.id, c.name, c.color, c.icon
-             ORDER BY total DESC
-             LIMIT :limit"
+                        SUM(t.amount) AS total
+                 FROM transactions t
+                 INNER JOIN categories c ON c.id = t.category_id
+                 LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
+                 WHERE t.user_id = :user_id AND t.type = 'despesa' AND t.status = 'confirmado'
+                   AND DATE_FORMAT(COALESCE(ci.due_date, t.transaction_date), '%Y-%m') = :year_month
+                   AND t.deleted_at IS NULL
+                 GROUP BY c.id, c.name, c.color, c.icon
+                 ORDER BY total DESC
+                 LIMIT :limit"
         );
         $statement->bindValue(":user_id", $userId, \PDO::PARAM_INT);
         $statement->bindValue(":year_month", $yearMonth, \PDO::PARAM_STR);
@@ -495,7 +495,7 @@ class Transaction extends AbstractModel
              LEFT JOIN bank_accounts ba ON ba.id = t.bank_account_id
              LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
              WHERE t.user_id = :user_id AND t.deleted_at IS NULL
-             ORDER BY t.transaction_date DESC, t.id DESC
+             ORDER BY t.created_at DESC, t.id DESC
              LIMIT :limit"
         );
         $statement->bindValue(":user_id", $userId, \PDO::PARAM_INT);
@@ -543,16 +543,14 @@ class Transaction extends AbstractModel
     public static function getFirstMonthForUser(int $userId): ?string
     {
         $model = new static();
-
         $statement = $model->connection->prepare(
-            "SELECT MIN(transaction_date) AS first_date
-             FROM transactions
-             WHERE user_id = :user_id AND deleted_at IS NULL"
+            "SELECT MIN(COALESCE(ci.due_date, t.transaction_date)) AS first_date
+         FROM transactions t
+         LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
+         WHERE t.user_id = :user_id AND t.deleted_at IS NULL"
         );
         $statement->execute(["user_id" => $userId]);
-
         $firstDate = $statement->fetch()->first_date;
-
         return $firstDate ? (new \DateTimeImmutable($firstDate))->format('Y-m') : null;
     }
 
@@ -562,16 +560,14 @@ class Transaction extends AbstractModel
     public static function getLastMonthForUser(int $userId): ?string
     {
         $model = new static();
-
         $statement = $model->connection->prepare(
-            "SELECT MAX(transaction_date) AS last_date
-             FROM transactions
-             WHERE user_id = :user_id AND deleted_at IS NULL"
+            "SELECT MAX(COALESCE(ci.due_date, t.transaction_date)) AS last_date
+         FROM transactions t
+         LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
+         WHERE t.user_id = :user_id AND t.deleted_at IS NULL"
         );
         $statement->execute(["user_id" => $userId]);
-
         $lastDate = $statement->fetch()->last_date;
-
         return $lastDate ? (new \DateTimeImmutable($lastDate))->format('Y-m') : null;
     }
 }
