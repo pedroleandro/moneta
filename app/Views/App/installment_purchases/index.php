@@ -22,7 +22,7 @@
                     <th>Cartão</th>
                     <th class="text-end">Valor Total</th>
                     <th class="text-center">Parcelas</th>
-                    <th>1ª Parcela</th>
+                    <th>Data da Compra</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -40,7 +40,7 @@
                             R$ <?= number_format($purchase->getTotalAmount(), 2, ',', '.') ?>
                         </td>
                         <td data-label="Parcelas" class="text-center"><?= $purchase->getInstallmentsCount() ?>x</td>
-                        <td data-label="1ª Parcela">
+                        <td data-label="Data da Compra">
                             <?= date('d/m/Y', strtotime($purchase->getFirstInstallmentDate())) ?>
                         </td>
                     </tr>

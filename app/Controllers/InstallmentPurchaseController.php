@@ -186,7 +186,7 @@ class InstallmentPurchaseController extends Controller
                 return;
             }
 
-            $purchase->setFirstInstallmentDate($firstInvoice->getDueDate());
+            $purchase->setFirstInstallmentDate($purchaseDate);
 
             $connection->beginTransaction();
 
