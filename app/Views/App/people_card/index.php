@@ -52,7 +52,7 @@
                             <?php endif; ?>
                         </td>
                         <td data-label="Total Gasto" class="text-end">
-                            R$ <?= number_format($cardUser->totalSpent(), 2, ',', '.') ?>
+                            R$ <?= number_format($cardUser->getTotalSpent(), 2, ',', '.') ?>
                         </td>
                         <td data-label="Ações" class="text-end">
                             <a href="<?= url('/pessoas-cartao/' . $cardUser->getId() . '/editar') ?>"

@@ -35,6 +35,7 @@ class CardUser extends AbstractModel
     private ?string $deletedAt = null;
 
     private array $linkedCards = [];
+    private float $totalSpent = 0.0;
 
     public function getId(): ?int
     {
@@ -167,14 +168,19 @@ class CardUser extends AbstractModel
         return array_keys($this->linkedCards);
     }
 
+    public function getTotalSpent(): float
+    {
+        return $this->totalSpent;
+    }
+
     public static function findAllForUser(int $userId): array
     {
         $model = new static();
 
         $statement = $model->connection->prepare(
             "SELECT * FROM card_users
-             WHERE owner_user_id = :user_id AND deleted_at IS NULL
-             ORDER BY name ASC"
+         WHERE owner_user_id = :user_id AND deleted_at IS NULL
+         ORDER BY name ASC"
         );
         $statement->execute(["user_id" => $userId]);
 
@@ -186,12 +192,14 @@ class CardUser extends AbstractModel
 
         $ids = array_column($rows, "id");
         $cardsByPerson = static::loadLinkedCards($ids);
+        $totalsByPerson = static::loadTotalSpent($ids);
 
         $results = [];
 
         foreach ($rows as $row) {
             $instance = static::hydrate($row);
             $instance->linkedCards = $cardsByPerson[$row["id"]] ?? [];
+            $instance->totalSpent = $totalsByPerson[$row["id"]] ?? 0.0;
             $results[] = $instance;
         }
 
@@ -204,8 +212,8 @@ class CardUser extends AbstractModel
 
         $statement = $model->connection->prepare(
             "SELECT * FROM card_users
-             WHERE id = :id AND owner_user_id = :user_id AND deleted_at IS NULL
-             LIMIT 1"
+         WHERE id = :id AND owner_user_id = :user_id AND deleted_at IS NULL
+         LIMIT 1"
         );
         $statement->execute(["id" => $id, "user_id" => $userId]);
 
@@ -217,7 +225,9 @@ class CardUser extends AbstractModel
 
         $instance = static::hydrate($row);
         $cardsByPerson = static::loadLinkedCards([$id]);
+        $totalsByPerson = static::loadTotalSpent([$id]);
         $instance->linkedCards = $cardsByPerson[$id] ?? [];
+        $instance->totalSpent = $totalsByPerson[$id] ?? 0.0;
 
         return $instance;
     }
@@ -278,17 +288,43 @@ class CardUser extends AbstractModel
         }
     }
 
-    public function totalSpent(): float
+    private static function loadTotalSpent(array $cardUserIds): array
     {
-        $statement = $this->connection->prepare(
-            "SELECT COALESCE(SUM(ts.amount), 0) AS total
-         FROM transaction_splits ts
-         INNER JOIN transactions t ON t.id = ts.transaction_id
-         WHERE ts.card_user_id = :id AND t.deleted_at IS NULL"
-        );
-        $statement->execute(["id" => $this->getId()]);
+        if (empty($cardUserIds)) {
+            return [];
+        }
 
-        return (float)$statement->fetch()->total;
+        $model = new static();
+        $placeholders = implode(",", array_fill(0, count($cardUserIds), "?"));
+
+        $statement = $model->connection->prepare(
+            "SELECT cu.id AS card_user_id,
+                COALESCE(splits.total, 0) - COALESCE(payments.total, 0) AS total
+         FROM card_users cu
+         LEFT JOIN (
+             SELECT ts.card_user_id, SUM(ts.amount) AS total
+             FROM transaction_splits ts
+             INNER JOIN transactions t ON t.id = ts.transaction_id
+             WHERE t.deleted_at IS NULL
+             GROUP BY ts.card_user_id
+         ) splits ON splits.card_user_id = cu.id
+         LEFT JOIN (
+             SELECT paying_card_user_id, SUM(amount) AS total
+             FROM card_invoice_payments
+             WHERE paying_card_user_id IS NOT NULL
+             GROUP BY paying_card_user_id
+         ) payments ON payments.paying_card_user_id = cu.id
+         WHERE cu.id IN ({$placeholders})"
+        );
+        $statement->execute(array_values($cardUserIds));
+
+        $result = [];
+
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $result[(int)$row["card_user_id"]] = max(0, (float)$row["total"]);
+        }
+
+        return $result;
     }
 
     public function isInUse(): bool
