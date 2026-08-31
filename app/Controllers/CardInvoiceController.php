@@ -259,6 +259,7 @@ class CardInvoiceController extends Controller
                         "transaction_date" => $paymentDate,
                         "status" => Transaction::STATUS_CONFIRMED,
                     ]);
+                    $paymentTransaction->save();
                     $payment->setTransactionId($paymentTransaction->getId());
                     $payment->save();
                     $paymentTransaction->applyBalanceEffect();
