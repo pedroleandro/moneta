@@ -114,9 +114,6 @@ class CardInvoice extends AbstractModel
         return $this->createdAt;
     }
 
-    /**
-     * Já pago (soma dos pagamentos registrados).
-     */
     public function getPaidAmount(): float
     {
         $statement = $this->connection->prepare(
@@ -129,7 +126,7 @@ class CardInvoice extends AbstractModel
 
     public function getRemainingAmount(): float
     {
-        return max(0, ($this->totalAmount ?? 0) - $this->getPaidAmount());
+        return max(0, ($this->getTotalAmount() ?? 0) - $this->getPaidAmount());
     }
 
     public function recalculateTotal(): float

@@ -99,6 +99,9 @@ class CardInvoiceController extends Controller
                 static fn($cu) => in_array($invoice->getCreditCardId(), $cu->getLinkedCardIds(), true)
             ));
 
+            $paidAmount = $invoice->getPaidAmount();
+            $remainingAmount = $invoice->getRemainingAmount();
+
             echo $this->view->render("card_invoices/show", [
                 "title" => "Fatura | " . APP_NAME,
                 "active" => "faturas",
@@ -110,7 +113,10 @@ class CardInvoiceController extends Controller
                 "personTotals" => $personTotals,
                 "myOwnAmount" => $myOwnAmount,
                 "cardUsers" => $cardUsers,
+                "paidAmount" => $paidAmount,
+                "remainingAmount" => $remainingAmount,
             ]);
+
         } catch (\Throwable $exception) {
             Logger::error("Falha ao carregar fatura", [
                 "user_id" => $userId,

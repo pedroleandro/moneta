@@ -29,7 +29,7 @@
             <div class="card">
                 <div class="card-body">
                     <small class="text-body-secondary d-block">Já Pago</small>
-                    <h5 class="mb-0 text-success">R$ <?= number_format($invoice->getPaidAmount(), 2, ',', '.') ?></h5>
+                    <h5 class="mb-0 text-success">R$ <?= number_format($paidAmount, 2, ',', '.') ?></h5>
                 </div>
             </div>
         </div>
@@ -38,7 +38,7 @@
                 <div class="card-body">
                     <small class="text-body-secondary d-block">Falta Pagar</small>
                     <h5 class="mb-0 text-danger">
-                        R$ <?= number_format($invoice->getRemainingAmount(), 2, ',', '.') ?></h5>
+                        R$ <?= number_format($remainingAmount, 2, ',', '.') ?></h5>
                 </div>
             </div>
         </div>
@@ -178,7 +178,7 @@
         </div>
 
         <div class="col-12 col-lg-5">
-            <?php if ($invoice->getRemainingAmount() > 0): ?>
+            <?php if ($remainingAmount > 0): ?>
                 <div class="card">
                     <div class="card-header">
                         <h6 class="mb-0">Registrar Pagamento</h6>
@@ -192,9 +192,9 @@
                                 <input type="text" class="form-control currency-mask" id="amount_display"
                                        data-target="#amount" inputmode="numeric" placeholder="R$ 0,00" required/>
                                 <input type="hidden" id="amount" name="amount"
-                                       value="<?= number_format($invoice->getRemainingAmount(), 2, '.', '') ?>"/>
+                                       value="<?= number_format($remainingAmount, 2, '.', '') ?>"/>
                                 <small class="text-body-secondary">
-                                    Saldo devedor: R$ <?= number_format($invoice->getRemainingAmount(), 2, ',', '.') ?>
+                                    Saldo devedor: R$ <?= number_format($remainingAmount, 2, ',', '.') ?>
                                 </small>
                             </div>
 
