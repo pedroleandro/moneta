@@ -54,6 +54,104 @@ class ProfileController extends Controller
         }
     }
 
+    public function updateAvatar(?array $data): void
+    {
+        $this->validateCsrfToken($data, "/perfil");
+
+        $userId = Auth::user()->id;
+
+        try {
+            $user = User::find($userId);
+
+            if (!$user) {
+                Message::error("Usuário não encontrado.");
+                redirect("/perfil");
+                return;
+            }
+
+            $file = $_FILES["avatar"] ?? null;
+
+            if (!$file || $file["error"] !== UPLOAD_ERR_OK) {
+                Message::error("Selecione uma imagem válida para enviar.");
+                redirect("/perfil");
+                return;
+            }
+
+            $maxBytes = 2 * 1024 * 1024; // 2MB
+
+            if ($file["size"] > $maxBytes) {
+                Message::error("A imagem deve ter no máximo 2MB.");
+                redirect("/perfil");
+                return;
+            }
+
+            $allowedMimes = [
+                "image/jpeg" => "jpg",
+                "image/png" => "png",
+                "image/webp" => "webp",
+            ];
+
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $file["tmp_name"]);
+            finfo_close($finfo);
+
+            if (!isset($allowedMimes[$mimeType])) {
+                Message::error("Formato de imagem não permitido. Envie JPG, PNG ou WEBP.");
+                redirect("/perfil");
+                return;
+            }
+
+            $extension = $allowedMimes[$mimeType];
+            $hash = bin2hex(random_bytes(8));
+            $filename = "user_{$userId}_{$hash}.{$extension}";
+
+            $uploadDir = dirname(__DIR__, 2) . "/public/assets/uploads/avatars";
+
+            if (!is_dir($uploadDir)) {
+                if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+                    throw new \RuntimeException(sprintf('Diretório "%s" não pôde ser criado', $uploadDir));
+                }
+            }
+
+            $destination = $uploadDir . "/" . $filename;
+
+            if (!move_uploaded_file($file["tmp_name"], $destination)) {
+                Message::error("Não foi possível salvar a imagem. Tente novamente.");
+                redirect("/perfil");
+                return;
+            }
+
+            $oldAvatar = $user->getAvatar();
+
+            if ($oldAvatar && !str_starts_with($oldAvatar, "http://") && !str_starts_with($oldAvatar, "https://")) {
+                $oldPath = dirname(__DIR__, 2) . "/public/assets" . $oldAvatar;
+
+                if (is_file($oldPath)) {
+                    unlink($oldPath);
+                }
+            }
+
+            $newAvatarPath = "/uploads/avatars/" . $filename;
+            $user->setAvatar($newAvatarPath);
+            $user->save();
+
+            $session = new Session();
+            $session->set("auth", $user->toSessionData());
+
+            AuditLog::record(LogEvent::PROFILE_UPDATED, $userId);
+
+            Message::success("Foto de perfil atualizada com sucesso.");
+            redirect("/perfil");
+        } catch (\Throwable $exception) {
+            Logger::error("Falha ao atualizar avatar", [
+                "user_id" => $userId,
+                "exception" => $exception->getMessage(),
+            ]);
+            Message::error("Não foi possível atualizar sua foto. Tente novamente.");
+            redirect("/perfil");
+        }
+    }
+
     public function updatePersonalData(?array $data): void
     {
         $this->validateCsrfToken($data, "/perfil");
