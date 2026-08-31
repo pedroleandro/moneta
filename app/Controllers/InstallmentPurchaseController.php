@@ -301,4 +301,242 @@ class InstallmentPurchaseController extends Controller
 
         return true;
     }
+
+    public function edit(?array $data): void
+    {
+        $userId = Auth::user()->id;
+        $id = (int)($data["id"] ?? 0);
+
+        try {
+            $purchase = InstallmentPurchase::findByIdForUser($id, $userId);
+
+            if (!$purchase) {
+                Message::error("Parcelamento não encontrado.");
+                redirect("/parcelamentos");
+                return;
+            }
+
+            if ($purchase->hasAnyInstallmentInPaidInvoice()) {
+                Message::error("Uma ou mais parcelas já estão em fatura paga. O prazo pra editar ou cancelar esse parcelamento já passou.");
+                redirect("/parcelamentos");
+                return;
+            }
+
+            echo $this->view->render("installment_purchases/edit", [
+                "title" => "Editar Parcelamento | " . APP_NAME,
+                "active" => "lancamentos-parcelamentos",
+                "purchase" => $purchase,
+            ]);
+            clear_old();
+        } catch (\Throwable $exception) {
+            Logger::error("Falha ao carregar edição de parcelamento", [
+                "user_id" => $userId,
+                "installment_purchase_id" => $id,
+                "exception" => $exception->getMessage(),
+            ]);
+            Message::error("Não foi possível carregar o parcelamento.");
+            redirect("/parcelamentos");
+        }
+    }
+
+    public function update(?array $data): void
+    {
+        $userId = Auth::user()->id;
+        $id = (int)($data["id"] ?? 0);
+
+        $this->validateCsrfToken($data, "/parcelamentos/{$id}/editar");
+
+        $connection = Connection::getInstance();
+
+        try {
+            $purchase = InstallmentPurchase::findByIdForUser($id, $userId);
+
+            if (!$purchase) {
+                Message::error("Parcelamento não encontrado.");
+                redirect("/parcelamentos");
+                return;
+            }
+
+            if ($purchase->hasAnyInstallmentInPaidInvoice()) {
+                Message::error("Uma ou mais parcelas já estão em fatura paga. O prazo pra editar esse parcelamento já passou.");
+                redirect("/parcelamentos");
+                return;
+            }
+
+            $newTotal = (float)str_replace(",", ".", (string)($data["total_amount"] ?? "0"));
+
+            if ($newTotal <= 0) {
+                flash_old($data);
+                Message::error("O valor total deve ser maior que zero.");
+                redirect("/parcelamentos/{$id}/editar");
+                return;
+            }
+
+            $card = CreditCard::find($purchase->getCreditCardId());
+            $oldTotal = $purchase->getTotalAmount();
+
+            // Checa limite disponível do cartão se o valor for aumentar
+            if ($card && $newTotal > $oldTotal) {
+                $increase = $newTotal - $oldTotal;
+                if ($increase > $card->getAvailableLimit()) {
+                    flash_old($data);
+                    Message::error("Limite insuficiente no cartão para aumentar o valor dessa compra.");
+                    redirect("/parcelamentos/{$id}/editar");
+                    return;
+                }
+            }
+
+            $transactions = Transaction::findAllForInstallmentPurchase($purchase->getId());
+
+            if (empty($transactions)) {
+                Message::error("Não foram encontradas parcelas para esse parcelamento.");
+                redirect("/parcelamentos");
+                return;
+            }
+
+            $connection->beginTransaction();
+
+            try {
+                $purchase->fill(["total_amount" => $newTotal]);
+                $purchase->save();
+
+                $newAmounts = $purchase->calculateInstallmentAmounts();
+
+                $affectedInvoiceIds = [];
+
+                foreach ($transactions as $transaction) {
+                    $installmentIndex = ($transaction->getInstallmentNumber() ?? 1) - 1;
+                    $newInstallmentAmount = $newAmounts[$installmentIndex] ?? $transaction->getAmount();
+                    $oldInstallmentAmount = $transaction->getAmount();
+
+                    $transaction->fill(["amount" => $newInstallmentAmount]);
+                    $transaction->save();
+
+                    $affectedInvoiceIds[$transaction->getCardInvoiceId()] = true;
+
+                    // Recalcula os splits proporcionalmente ao novo valor da parcela
+                    $splits = TransactionSplit::findAllForTransaction($transaction->getId());
+
+                    if (!empty($splits) && $oldInstallmentAmount > 0) {
+                        TransactionSplit::deleteAllForTransaction($transaction->getId());
+
+                        foreach ($splits as $split) {
+                            $proportion = $split->getAmount() / $oldInstallmentAmount;
+                            $newSplitAmount = round($newInstallmentAmount * $proportion, 2);
+
+                            if ($newSplitAmount <= 0) {
+                                continue;
+                            }
+
+                            $newSplit = new TransactionSplit();
+                            $newSplit->fill([
+                                "transaction_id" => $transaction->getId(),
+                                "card_user_id" => $split->getCardUserId(),
+                                "amount" => $newSplitAmount,
+                            ]);
+                            $newSplit->save();
+                        }
+                    }
+                }
+
+                foreach (array_keys($affectedInvoiceIds) as $invoiceId) {
+                    $invoice = CardInvoice::find($invoiceId);
+                    $invoice?->recalculateTotal();
+                }
+
+                $connection->commit();
+            } catch (\Throwable $inner) {
+                $connection->rollBack();
+                throw $inner;
+            }
+
+            AuditLog::record(LogEvent::INSTALLMENT_PURCHASE_UPDATED, $userId, [
+                "installment_purchase_id" => $purchase->getId(),
+                "old_total" => $oldTotal,
+                "new_total" => $newTotal,
+            ]);
+
+            clear_old();
+            Message::success("Parcelamento atualizado com sucesso.");
+            redirect("/parcelamentos");
+        } catch (\InvalidArgumentException $exception) {
+            Message::error($exception->getMessage());
+            redirect("/parcelamentos/{$id}/editar");
+        } catch (\Throwable $exception) {
+            Logger::error("Falha ao editar parcelamento", [
+                "user_id" => $userId,
+                "installment_purchase_id" => $id,
+                "exception" => $exception->getMessage(),
+            ]);
+            Message::error("Não foi possível editar o parcelamento. Tente novamente.");
+            redirect("/parcelamentos/{$id}/editar");
+        }
+    }
+
+    public function destroy(?array $data): void
+    {
+        $userId = Auth::user()->id;
+        $id = (int)($data["id"] ?? 0);
+
+        $this->validateCsrfToken($data, "/parcelamentos");
+
+        $connection = Connection::getInstance();
+
+        try {
+            $purchase = InstallmentPurchase::findByIdForUser($id, $userId);
+
+            if (!$purchase) {
+                Message::error("Parcelamento não encontrado.");
+                redirect("/parcelamentos");
+                return;
+            }
+
+            if ($purchase->hasAnyInstallmentInPaidInvoice()) {
+                Message::error("Uma ou mais parcelas já estão em fatura paga. O prazo pra cancelar esse parcelamento já passou.");
+                redirect("/parcelamentos");
+                return;
+            }
+
+            $transactions = Transaction::findAllForInstallmentPurchase($purchase->getId());
+
+            $connection->beginTransaction();
+
+            try {
+                $affectedInvoiceIds = [];
+
+                foreach ($transactions as $transaction) {
+                    $affectedInvoiceIds[$transaction->getCardInvoiceId()] = true;
+                    TransactionSplit::deleteAllForTransaction($transaction->getId());
+                    $transaction->delete();
+                }
+
+                foreach (array_keys($affectedInvoiceIds) as $invoiceId) {
+                    $invoice = CardInvoice::find($invoiceId);
+                    $invoice?->recalculateTotal();
+                }
+
+                $purchase->delete();
+
+                $connection->commit();
+            } catch (\Throwable $inner) {
+                $connection->rollBack();
+                throw $inner;
+            }
+
+            AuditLog::record(LogEvent::INSTALLMENT_PURCHASE_CANCELED, $userId, [
+                "installment_purchase_id" => $id,
+            ]);
+
+            Message::success("Parcelamento cancelado com sucesso.");
+            redirect("/parcelamentos");
+        } catch (\Throwable $exception) {
+            Logger::error("Falha ao cancelar parcelamento", [
+                "user_id" => $userId,
+                "installment_purchase_id" => $id,
+                "exception" => $exception->getMessage(),
+            ]);
+            Message::error("Não foi possível cancelar o parcelamento. Tente novamente.");
+            redirect("/parcelamentos");
+        }
+    }
 }

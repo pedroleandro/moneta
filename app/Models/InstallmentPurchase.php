@@ -232,14 +232,29 @@ class InstallmentPurchase extends AbstractModel
         return $this->creditCardName;
     }
 
+    public function hasAnyInstallmentInPaidInvoice(): bool
+    {
+        $statement = $this->connection->prepare(
+            "SELECT COUNT(*) AS total
+         FROM transactions t
+         INNER JOIN card_invoices ci ON ci.id = t.card_invoice_id
+         WHERE t.installment_purchase_id = :id
+           AND t.deleted_at IS NULL
+           AND ci.status = 'paga'"
+        );
+        $statement->execute(["id" => $this->getId()]);
+
+        return (int)$statement->fetch()->total > 0;
+    }
+
     public static function findByIdForUser(int $id, int $userId): ?self
     {
         $model = new static();
 
         $statement = $model->connection->prepare(
             "SELECT * FROM installment_purchases
-             WHERE id = :id AND user_id = :user_id AND deleted_at IS NULL
-             LIMIT 1"
+         WHERE id = :id AND user_id = :user_id AND deleted_at IS NULL
+         LIMIT 1"
         );
         $statement->execute(["id" => $id, "user_id" => $userId]);
 

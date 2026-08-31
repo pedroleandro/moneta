@@ -602,4 +602,24 @@ class Transaction extends AbstractModel
         $lastDate = $statement->fetch()->last_date;
         return $lastDate ? (new \DateTimeImmutable($lastDate))->format('Y-m') : null;
     }
+
+    public static function findAllForInstallmentPurchase(int $installmentPurchaseId): array
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT * FROM transactions
+         WHERE installment_purchase_id = :id AND deleted_at IS NULL
+         ORDER BY installment_number ASC"
+        );
+        $statement->execute(["id" => $installmentPurchaseId]);
+
+        $results = [];
+
+        foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $results[] = static::hydrate($row);
+        }
+
+        return $results;
+    }
 }
