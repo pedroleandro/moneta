@@ -35,13 +35,22 @@ class Email
         }
     }
 
-    public function bootstrap(string $subject, string $body, string $toEmail, string $toName): self
+    public function bootstrap(
+        string $subject,
+        string $body,
+        string $toEmail,
+        string $toName,
+        string $type,
+        ?int $userId = null
+    ): self
     {
         $this->data = new \stdClass();
         $this->data->subject = $subject;
         $this->data->body = $body;
         $this->data->toEmail = $toEmail;
         $this->data->toName = $toName;
+        $this->data->type = $type;
+        $this->data->userId = $userId;
         return $this;
     }
 
@@ -57,39 +66,50 @@ class Email
         if (empty($this->data)) {
             throw new \InvalidArgumentException("Erro ao enviar: verifique os dados.");
         }
-
         if (!filter_var($this->data->toEmail, FILTER_VALIDATE_EMAIL)) {
             throw new \InvalidArgumentException("E-mail do destinatário é inválido.");
         }
-
         if (!filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
             throw new \InvalidArgumentException("E-mail do remetente é inválido");
         }
-
         try {
-
             $this->mail->setFrom($fromEmail, $fromName);
             $this->mail->addAddress($this->data->toEmail, $this->data->toName);
             $this->mail->addReplyTo($fromEmail, $fromName);
-
             if (!empty($this->data->attachments)) {
                 foreach ($this->data->attachments as $filePath => $filename) {
                     $this->mail->addAttachment($filePath, $filename);
                 }
             }
-
             $this->mail->isHTML(true);
             $this->mail->Subject = $this->data->subject;
             $this->mail->Body = $this->data->body;
-
             $this->mail->send();
-            return true;
 
+            EmailLog::record(
+                toEmail: $this->data->toEmail,
+                subject: $this->data->subject,
+                type: $this->data->type,
+                status: "enviado",
+                userId: $this->data->userId
+            );
+
+            return true;
         } catch (Exception $mailException) {
             Logger::error("Falha ao enviar e-mail", [
                 "to" => $this->data->toEmail ?? null,
                 "exception" => $mailException->getMessage(),
             ]);
+
+            EmailLog::record(
+                toEmail: $this->data->toEmail ?? "",
+                subject: $this->data->subject ?? "",
+                type: $this->data->type ?? "desconhecido",
+                status: "falhou",
+                userId: $this->data->userId ?? null,
+                errorMessage: $mailException->getMessage()
+            );
+
             throw new \InvalidArgumentException("Erro ao enviar e-mail: " . $mailException->getMessage());
         }
     }
