@@ -246,7 +246,7 @@
                                     href=""
                                     data-bs-toggle="dropdown">
                                 <div class="avatar avatar-online">
-                                    <img src="<?= assets_sneat('/assets/img/avatars/1.png') ?>" alt
+                                    <img src="<?= avatarSrc(\App\Core\Auth::user()->avatar ?? null, \App\Core\Auth::user()->name ?? '') ?>" alt
                                          class="w-px-40 h-auto rounded-circle"/>
                                 </div>
                             </a>
@@ -256,7 +256,7 @@
                                         <div class="d-flex">
                                             <div class="flex-shrink-0 me-3">
                                                 <div class="avatar avatar-online">
-                                                    <img src="<?= assets_sneat('/assets/img/avatars/1.png') ?>" alt
+                                                    <img src="<?= avatarSrc(\App\Core\Auth::user()->avatar ?? null, \App\Core\Auth::user()->name ?? '') ?>" alt
                                                          class="w-px-40 h-auto rounded-circle"/>
                                                 </div>
                                             </div>
@@ -337,6 +337,7 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="<?= assets('/js/datatable-init.js') ?>"></script>
+<script src="<?= assets('/js/avatar-upload.js') ?>"></script>
 
 <script src="<?= assets_sneat('/assets/vendor/libs/popper/popper.js') ?>"></script>
 <script src="<?= assets_sneat('/assets/vendor/js/bootstrap.js') ?>"></script>
