@@ -244,7 +244,7 @@ class LoginSecurity
 
         try {
             (new Email())
-                ->bootstrap("Novo acesso detectado — Moneta", $body, $email, $name)
+                ->bootstrap("Novo acesso detectado — Moneta", $body, $email, $name, "login_alert", $userId)
                 ->send();
         } catch (\Throwable $exception) {
             Logger::error("Falha ao enviar e-mail de alerta de login", [

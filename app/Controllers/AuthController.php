@@ -223,7 +223,9 @@ class AuthController extends Controller
                     "Confirme seu e-mail | " . APP_NAME,
                     "Clique no link para confirmar seu e-mail: <a href=\"{$verifyUrl}\">{$verifyUrl}</a>.",
                     $user->getEmail(),
-                    $user->getName()
+                    $user->getName(),
+                    "email_verification",
+                    $user->getId()
                 )
                 ->send();
         } catch (\Throwable $exception) {
@@ -277,25 +279,25 @@ class AuthController extends Controller
         if ($user) {
             $token = $user->setResetToken();
             $user->save();
-
             AuditLog::record(LogEvent::PASSWORD_RESET_REQUESTED, $user->getId());
-
             try {
                 $resetUrl = url("/resetar-senha/" . $token);
-
                 (new Email())
                     ->bootstrap(
                         "Redefinição de senha | " . APP_NAME,
                         "Clique no link para redefinir sua senha: <a href=\"{$resetUrl}\">{$resetUrl}</a>. O link expira em 2 horas.",
                         $user->getEmail(),
-                        $user->getName()
+                        $user->getName(),
+                        "password_reset",
+                        $user->getId()
                     )
                     ->send();
             } catch (\Throwable $exception) {
                 // Falha de envio não deve expor detalhes ao usuário.
             }
+        } else {
+            AuditLog::record(LogEvent::PASSWORD_RESET_REQUESTED_UNKNOWN_EMAIL, null, ["email" => $email]);
         }
-
         redirect("/redefinir-senha/sucesso");
     }
 
@@ -424,7 +426,9 @@ class AuthController extends Controller
                         "Confirme seu e-mail | " . APP_NAME,
                         "Clique no link para confirmar seu e-mail: <a href=\"{$verifyUrl}\">{$verifyUrl}</a>.",
                         $user->getEmail(),
-                        $user->getName()
+                        $user->getName(),
+                        "email_verification",
+                        $user->getId()
                     )
                     ->send();
             } catch (\Throwable $exception) {
