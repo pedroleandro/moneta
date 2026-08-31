@@ -17,7 +17,8 @@
       "config/app.php",
       "app/Helpers/csrf.php",
       "app/Helpers/url.php",
-      "app/Helpers/old.php"
+      "app/Helpers/old.php",
+      "app/Helpers/avatar.php"
     ]
   },
   "require": {
