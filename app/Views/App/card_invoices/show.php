@@ -147,12 +147,13 @@
                             <th>Data</th>
                             <th>Origem</th>
                             <th class="text-end">Valor</th>
+                            <th class="text-end">Ações</th>
                         </tr>
                         </thead>
                         <tbody>
                         <?php if (empty($payments)): ?>
                             <tr class="table-empty-row">
-                                <td colspan="3" class="text-center py-6">Nenhum pagamento registrado ainda.</td>
+                                <td colspan="4" class="text-center py-6">Nenhum pagamento registrado ainda.</td>
                             </tr>
                         <?php endif; ?>
                         <?php foreach ($payments as $payment): ?>
@@ -168,6 +169,19 @@
                                 </td>
                                 <td data-label="Valor" class="text-end">
                                     R$ <?= number_format($payment->getAmount(), 2, ',', '.') ?>
+                                </td>
+                                <td data-label="Ações" class="text-end">
+                                    <a href="<?= url('/faturas/' . $invoice->getId() . '/pagamentos/' . $payment->getId() . '/editar') ?>"
+                                       class="btn btn-icon btn-outline-secondary btn-icon-soft-primary me-1" title="Editar">
+                                        <i class="icon-base bx bx-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-icon btn-outline-danger btn-icon-soft-danger"
+                                            title="Excluir"
+                                            data-bs-toggle="modal" data-bs-target="#modal-excluir-pagamento"
+                                            data-action="<?= url('/faturas/' . $invoice->getId() . '/pagamentos/' . $payment->getId() . '/excluir') ?>"
+                                            data-name="esse pagamento de R$ <?= number_format($payment->getAmount(), 2, ',', '.') ?>">
+                                        <i class="icon-base bx bx-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -257,6 +271,29 @@
             <?php else: ?>
                 <div class="alert alert-success">Essa fatura já está totalmente paga.</div>
             <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-excluir-pagamento" data-delete-modal tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Excluir pagamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                Tem certeza que deseja excluir <strong data-delete-name></strong>?
+                Se ele saiu de uma conta bancária, o saldo será revertido automaticamente.
+                Se esse pagamento tiver quitado a fatura, ela volta para "aberta".
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="">
+                    <?= csrf_input() ?>
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

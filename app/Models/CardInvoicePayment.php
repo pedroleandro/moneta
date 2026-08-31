@@ -13,6 +13,7 @@ class CardInvoicePayment extends AbstractModel
     protected array $fillable = [
         "card_invoice_id",
         "bank_account_id",
+        "transaction_id",
         "paying_card_user_id",
         "amount",
         "payment_date",
@@ -32,6 +33,7 @@ class CardInvoicePayment extends AbstractModel
     private ?int $id = null;
     private ?int $cardInvoiceId = null;
     private ?int $bankAccountId = null;
+    private ?int $transactionId = null;
     private ?int $payingCardUserId = null;
     private ?string $payingPersonName = null;
     private ?float $amount = null;
@@ -64,6 +66,17 @@ class CardInvoicePayment extends AbstractModel
     public function getBankAccountId(): ?int
     {
         return $this->bankAccountId;
+    }
+
+    public function setTransactionId(?int $id): void
+    {
+        $this->transactionId = $id;
+        $this->attributes["transaction_id"] = $id;
+    }
+
+    public function getTransactionId(): ?int
+    {
+        return $this->transactionId;
     }
 
     public function setPayingCardUserId(?int $id): void
@@ -176,5 +189,23 @@ class CardInvoicePayment extends AbstractModel
         $statement->execute(["invoice_id" => $invoiceId]);
 
         return (float)$statement->fetch()->total;
+    }
+
+    public static function findByIdForUser(int $id, int $userId): ?self
+    {
+        $model = new static();
+
+        $statement = $model->connection->prepare(
+            "SELECT cip.* FROM card_invoice_payments cip
+         INNER JOIN card_invoices ci ON ci.id = cip.card_invoice_id
+         INNER JOIN credit_cards cc ON cc.id = ci.credit_card_id
+         WHERE cip.id = :id AND cc.user_id = :user_id
+         LIMIT 1"
+        );
+        $statement->execute(["id" => $id, "user_id" => $userId]);
+
+        $row = $statement->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ? static::hydrate($row) : null;
     }
 }

@@ -161,6 +161,24 @@ class CardInvoiceController extends Controller
                 return;
             }
 
+            $paymentDate = $data["payment_date"] ?? date("Y-m-d");
+
+            $dateCheck = \DateTime::createFromFormat("Y-m-d", $paymentDate);
+            if (!$dateCheck) {
+                Message::error("Data de pagamento inválida.");
+                redirect("/faturas/{$id}");
+                return;
+            }
+
+            $earliestPaymentDate = $invoice->getEarliestValidPaymentDate();
+
+            if ($earliestPaymentDate && $paymentDate < $earliestPaymentDate) {
+                $earliestFormatted = date("d/m/Y", strtotime($earliestPaymentDate));
+                Message::error("A data do pagamento não pode ser anterior ao início do ciclo dessa fatura ({$earliestFormatted}).");
+                redirect("/faturas/{$id}");
+                return;
+            }
+
             $source = $data["payment_source"] ?? "account";
             $bankAccountId = null;
             $bankAccount = null;
@@ -200,18 +218,19 @@ class CardInvoiceController extends Controller
 
             $card = CreditCard::find($invoice->getCreditCardId());
 
-            $payingCardUserId = !empty($data["paying_card_user_id"]) ? (int)$data["paying_card_user_id"] : null;
+            $payingCardUserId = null;
 
-            if ($payingCardUserId) {
-                $payingPerson = \App\Models\CardUser::findByIdForUser($payingCardUserId, $userId);
-                if (!$payingPerson || !in_array($invoice->getCreditCardId(), $payingPerson->getLinkedCardIds(), true)) {
-                    Message::error("A pessoa selecionada não está vinculada a esse cartão.");
+            if (!empty($data["paying_person_id"])) {
+                $payingCardUser = \App\Models\CardUser::findByIdForUser((int)$data["paying_person_id"], $userId);
+
+                if (!$payingCardUser || !in_array($invoice->getCreditCardId(), $payingCardUser->getLinkedCardIds(), true)) {
+                    Message::error("Pessoa inválida para esse cartão.");
                     redirect("/faturas/{$id}");
                     return;
                 }
-            }
 
-            $paymentDate = $data["payment_date"] ?? date("Y-m-d");
+                $payingCardUserId = $payingCardUser->getId();
+            }
 
             $connection->beginTransaction();
 
@@ -240,7 +259,8 @@ class CardInvoiceController extends Controller
                         "transaction_date" => $paymentDate,
                         "status" => Transaction::STATUS_CONFIRMED,
                     ]);
-                    $paymentTransaction->save();
+                    $payment->setTransactionId($paymentTransaction->getId());
+                    $payment->save();
                     $paymentTransaction->applyBalanceEffect();
                 }
 
@@ -276,6 +296,286 @@ class CardInvoiceController extends Controller
             ]);
             Message::error("Não foi possível registrar o pagamento. Tente novamente.");
             redirect("/faturas/{$id}");
+        }
+    }
+
+    public function editPayment(?array $data): void
+    {
+        $userId = Auth::user()->id;
+        $invoiceId = (int)($data["id"] ?? 0);
+        $paymentId = (int)($data["paymentId"] ?? 0);
+
+        try {
+            $invoice = CardInvoice::findByIdForUser($invoiceId, $userId);
+            $payment = CardInvoicePayment::findByIdForUser($paymentId, $userId);
+
+            if (!$invoice || !$payment || $payment->getCardInvoiceId() !== $invoice->getId()) {
+                Message::error("Pagamento não encontrado.");
+                redirect("/faturas/{$invoiceId}");
+                return;
+            }
+
+            $blockReason = $this->checkPaymentEditWindow($invoice);
+            if ($blockReason) {
+                Message::error($blockReason);
+                redirect("/faturas/{$invoiceId}");
+                return;
+            }
+
+            $card = CreditCard::find($invoice->getCreditCardId());
+            $cardUsers = $card ? \App\Models\CardUser::findAllForUser($userId) : [];
+            $cardUsers = array_values(array_filter(
+                $cardUsers,
+                static fn($cu) => in_array($invoice->getCreditCardId(), $cu->getLinkedCardIds(), true)
+            ));
+
+            $accounts = array_values(array_filter(BankAccount::findAllForUser($userId), fn($a) => $a->isActive()));
+
+            echo $this->view->render("card_invoices/edit_payment", [
+                "title" => "Editar Pagamento | " . APP_NAME,
+                "active" => "faturas",
+                "invoice" => $invoice,
+                "payment" => $payment,
+                "accounts" => $accounts,
+                "cardUsers" => $cardUsers,
+            ]);
+        } catch (\Throwable $exception) {
+            Logger::error("Falha ao carregar edição de pagamento", [
+                "user_id" => $userId,
+                "invoice_id" => $invoiceId,
+                "payment_id" => $paymentId,
+                "exception" => $exception->getMessage(),
+            ]);
+            Message::error("Não foi possível carregar o pagamento.");
+            redirect("/faturas/{$invoiceId}");
+        }
+    }
+
+    public function updatePayment(?array $data): void
+    {
+        $userId = Auth::user()->id;
+        $invoiceId = (int)($data["id"] ?? 0);
+        $paymentId = (int)($data["paymentId"] ?? 0);
+
+        $this->validateCsrfToken($data, "/faturas/{$invoiceId}/pagamentos/{$paymentId}/editar");
+
+        $connection = Connection::getInstance();
+
+        try {
+            $invoice = CardInvoice::findByIdForUser($invoiceId, $userId);
+            $payment = CardInvoicePayment::findByIdForUser($paymentId, $userId);
+
+            if (!$invoice || !$payment || $payment->getCardInvoiceId() !== $invoice->getId()) {
+                Message::error("Pagamento não encontrado.");
+                redirect("/faturas/{$invoiceId}");
+                return;
+            }
+
+            $blockReason = $this->checkPaymentEditWindow($invoice);
+            if ($blockReason) {
+                Message::error($blockReason);
+                redirect("/faturas/{$invoiceId}");
+                return;
+            }
+
+            $newAmount = (float)str_replace(",", ".", (string)($data["amount"] ?? "0"));
+
+            if ($newAmount <= 0) {
+                Message::error("O valor do pagamento deve ser maior que zero.");
+                redirect("/faturas/{$invoiceId}/pagamentos/{$paymentId}/editar");
+                return;
+            }
+
+            // valor máximo permitido: total da fatura menos o que já foi pago
+            // por OUTROS pagamentos (exclui o próprio, que está sendo editado)
+            $otherPaid = $invoice->getPaidAmount() - $payment->getAmount();
+            $maxAllowed = ($invoice->getTotalAmount() ?? 0) - $otherPaid;
+
+            if ($newAmount > $maxAllowed + 0.001) {
+                Message::error("O novo valor não pode ultrapassar o saldo devedor da fatura.");
+                redirect("/faturas/{$invoiceId}/pagamentos/{$paymentId}/editar");
+                return;
+            }
+
+            $newPaymentDate = $data["payment_date"] ?? $payment->getPaymentDate();
+
+            $dateCheck = \DateTime::createFromFormat("Y-m-d", $newPaymentDate);
+            if (!$dateCheck) {
+                Message::error("Data de pagamento inválida.");
+                redirect("/faturas/{$invoiceId}/pagamentos/{$paymentId}/editar");
+                return;
+            }
+
+            $earliestPaymentDate = $invoice->getEarliestValidPaymentDate();
+
+            if ($earliestPaymentDate && $newPaymentDate < $earliestPaymentDate) {
+                $earliestFormatted = date("d/m/Y", strtotime($earliestPaymentDate));
+                Message::error("A data do pagamento não pode ser anterior ao início do ciclo dessa fatura ({$earliestFormatted}).");
+                redirect("/faturas/{$invoiceId}/pagamentos/{$paymentId}/editar");
+                return;
+            }
+
+            $payingCardUserId = null;
+
+            if (!empty($data["paying_person_id"])) {
+                $payingCardUser = \App\Models\CardUser::findByIdForUser((int)$data["paying_person_id"], $userId);
+
+                if (!$payingCardUser || !in_array($invoice->getCreditCardId(), $payingCardUser->getLinkedCardIds(), true)) {
+                    Message::error("Pessoa inválida para esse cartão.");
+                    redirect("/faturas/{$invoiceId}/pagamentos/{$paymentId}/editar");
+                    return;
+                }
+
+                $payingCardUserId = $payingCardUser->getId();
+            }
+
+            $connection->beginTransaction();
+
+            try {
+                $linkedTransaction = $payment->getTransactionId() ? Transaction::find($payment->getTransactionId()) : null;
+
+                if ($linkedTransaction) {
+                    $linkedTransaction->reverseBalanceEffect();
+                }
+
+                $payment->fill([
+                    "amount" => $newAmount,
+                    "payment_date" => $newPaymentDate,
+                    "paying_card_user_id" => $payingCardUserId,
+                    "notes" => $data["notes"] ?? $payment->getNotes(),
+                ]);
+                $payment->save();
+
+                if ($linkedTransaction) {
+                    $linkedTransaction->fill([
+                        "amount" => $newAmount,
+                        "transaction_date" => $newPaymentDate,
+                    ]);
+                    $linkedTransaction->save();
+                    $linkedTransaction->applyBalanceEffect();
+                }
+
+                $this->syncInvoiceStatusAfterPaymentChange($invoice);
+
+                $connection->commit();
+            } catch (\Throwable $inner) {
+                $connection->rollBack();
+                throw $inner;
+            }
+
+            AuditLog::record(LogEvent::INVOICE_PAYMENT_UPDATED, $userId, [
+                "invoice_id" => $invoiceId,
+                "payment_id" => $paymentId,
+                "new_amount" => $newAmount,
+            ]);
+
+            Message::success("Pagamento atualizado com sucesso.");
+            redirect("/faturas/{$invoiceId}");
+        } catch (\InvalidArgumentException $exception) {
+            Message::error($exception->getMessage());
+            redirect("/faturas/{$invoiceId}/pagamentos/{$paymentId}/editar");
+        } catch (\Throwable $exception) {
+            Logger::error("Falha ao editar pagamento de fatura", [
+                "user_id" => $userId,
+                "invoice_id" => $invoiceId,
+                "payment_id" => $paymentId,
+                "exception" => $exception->getMessage(),
+            ]);
+            Message::error("Não foi possível editar o pagamento. Tente novamente.");
+            redirect("/faturas/{$invoiceId}");
+        }
+    }
+
+    public function deletePayment(?array $data): void
+    {
+        $userId = Auth::user()->id;
+        $invoiceId = (int)($data["id"] ?? 0);
+        $paymentId = (int)($data["paymentId"] ?? 0);
+
+        $this->validateCsrfToken($data, "/faturas/{$invoiceId}");
+
+        $connection = Connection::getInstance();
+
+        try {
+            $invoice = CardInvoice::findByIdForUser($invoiceId, $userId);
+            $payment = CardInvoicePayment::findByIdForUser($paymentId, $userId);
+
+            if (!$invoice || !$payment || $payment->getCardInvoiceId() !== $invoice->getId()) {
+                Message::error("Pagamento não encontrado.");
+                redirect("/faturas/{$invoiceId}");
+                return;
+            }
+
+            $blockReason = $this->checkPaymentEditWindow($invoice);
+            if ($blockReason) {
+                Message::error($blockReason);
+                redirect("/faturas/{$invoiceId}");
+                return;
+            }
+
+            $connection->beginTransaction();
+
+            try {
+                $linkedTransaction = $payment->getTransactionId() ? Transaction::find($payment->getTransactionId()) : null;
+
+                if ($linkedTransaction) {
+                    $linkedTransaction->reverseBalanceEffect();
+                    $linkedTransaction->delete();
+                }
+
+                $payment->delete();
+
+                $this->syncInvoiceStatusAfterPaymentChange($invoice);
+
+                $connection->commit();
+            } catch (\Throwable $inner) {
+                $connection->rollBack();
+                throw $inner;
+            }
+
+            AuditLog::record(LogEvent::INVOICE_PAYMENT_DELETED, $userId, [
+                "invoice_id" => $invoiceId,
+                "payment_id" => $paymentId,
+            ]);
+
+            Message::success("Pagamento excluído com sucesso.");
+            redirect("/faturas/{$invoiceId}");
+        } catch (\Throwable $exception) {
+            Logger::error("Falha ao excluir pagamento de fatura", [
+                "user_id" => $userId,
+                "invoice_id" => $invoiceId,
+                "payment_id" => $paymentId,
+                "exception" => $exception->getMessage(),
+            ]);
+            Message::error("Não foi possível excluir o pagamento. Tente novamente.");
+            redirect("/faturas/{$invoiceId}");
+        }
+    }
+
+    private function checkPaymentEditWindow(CardInvoice $invoice): ?string
+    {
+        if ($invoice->getStatus() !== CardInvoice::STATUS_PAID) {
+            return null;
+        }
+
+        if (date("Y-m-d") !== $invoice->getDueDate()) {
+            $dueFormatted = date("d/m/Y", strtotime($invoice->getDueDate()));
+            return "Essa fatura já foi paga. Correções nos pagamentos só são permitidas no dia do vencimento ({$dueFormatted}).";
+        }
+
+        return null;
+    }
+
+    private function syncInvoiceStatusAfterPaymentChange(CardInvoice $invoice): void
+    {
+        $remaining = $invoice->getRemainingAmount();
+
+        if ($remaining > 0.001 && $invoice->getStatus() === CardInvoice::STATUS_PAID) {
+            $invoice->setStatus(CardInvoice::STATUS_OPEN);
+            $invoice->save();
+        } elseif ($remaining <= 0.001 && $invoice->getStatus() !== CardInvoice::STATUS_PAID) {
+            $invoice->setStatus(CardInvoice::STATUS_PAID);
+            $invoice->save();
         }
     }
 }

@@ -298,4 +298,31 @@ class CardInvoice extends AbstractModel
 
         return ["past" => $past, "current" => $current, "future" => $future];
     }
+
+    public function getPreviousInvoice(): ?self
+    {
+        $statement = $this->connection->prepare(
+            "SELECT * FROM card_invoices
+         WHERE credit_card_id = :credit_card_id
+           AND reference_month < :reference_month
+           AND deleted_at IS NULL
+         ORDER BY reference_month DESC
+         LIMIT 1"
+        );
+        $statement->execute([
+            "credit_card_id" => $this->getCreditCardId(),
+            "reference_month" => $this->getReferenceMonth(),
+        ]);
+
+        $row = $statement->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ? static::hydrate($row) : null;
+    }
+
+    public function getEarliestValidPaymentDate(): ?string
+    {
+        $previous = $this->getPreviousInvoice();
+
+        return $previous?->getClosingDate();
+    }
 }

@@ -58,9 +58,13 @@ final class LogEvent
 
     // Faturas
     public const INVOICE_PAYMENT_CREATED = "invoice_payment_created";
+    public const INVOICE_PAYMENT_UPDATED = "invoice_payment_updated";
+    public const INVOICE_PAYMENT_DELETED = "invoice_payment_deleted";
 
     // Compras Parceladas
     public const INSTALLMENT_PURCHASE_CREATED = "installment_purchase_created";
+    public const INSTALLMENT_PURCHASE_UPDATED = "installment_purchase_updated";
+    public const INSTALLMENT_PURCHASE_CANCELED = "installment_purchase_canceled";
 
     public static function label(string $event): string
     {
@@ -118,9 +122,13 @@ final class LogEvent
 
             // Faturas
             self::INVOICE_PAYMENT_CREATED => "Pagamento de fatura registrado",
+            self::INVOICE_PAYMENT_UPDATED => "Pagamento de fatura editado",
+            self::INVOICE_PAYMENT_DELETED => "Pagamento de fatura excluído",
 
             // Compras parceladas
             self::INSTALLMENT_PURCHASE_CREATED => "Compra parcelada criada",
+            self::INSTALLMENT_PURCHASE_UPDATED => "Compra parcelada editada",
+            self::INSTALLMENT_PURCHASE_CANCELED => "Compra parcelada cancelada",
 
             default => $event,
         };
