@@ -68,7 +68,12 @@
                                     <i class="icon-base bx bx-trash"></i>
                                 </button>
                             <?php else: ?>
-                                <span class="text-body-secondary">—</span>
+                                <form method="post" action="<?= url('/categorias/' . $category->getId() . '/duplicar') ?>" class="d-inline">
+                                    <?= csrf_input() ?>
+                                    <button type="submit" class="btn btn-icon btn-outline-primary btn-icon-soft-primary" title="Duplicar para minha conta">
+                                        <i class="icon-base bx bx-duplicate"></i>
+                                    </button>
+                                </form>
                             <?php endif; ?>
                         </td>
                     </tr>

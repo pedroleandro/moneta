@@ -8,3 +8,4 @@ $router->post("/categorias/nova", "CategoryController@store");
 $router->get("/categorias/{id}/editar", "CategoryController@edit");
 $router->post("/categorias/{id}/editar", "CategoryController@update");
 $router->post("/categorias/{id}/excluir", "CategoryController@destroy");
+$router->post("/categorias/{id}/duplicar", "CategoryController@duplicate");

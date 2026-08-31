@@ -207,4 +207,21 @@ class Category extends AbstractModel
 
         return $row ? static::hydrate($row) : null;
     }
+
+    public function duplicateForUser(int $userId): self
+    {
+        $copy = new self();
+
+        $copy->fill([
+            "user_id" => $userId,
+            "name"    => $this->getName(),
+            "type"    => $this->getType(),
+            "color"   => $this->getColor(),
+            "icon"    => $this->getIcon(),
+        ]);
+
+        $copy->save();
+
+        return $copy;
+    }
 }

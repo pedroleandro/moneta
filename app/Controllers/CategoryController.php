@@ -260,4 +260,47 @@ class CategoryController extends Controller
             redirect("/categorias");
         }
     }
+
+    public function duplicate(?array $data): void
+    {
+        $userId = Auth::user()->id;
+        $id = (int)($data["id"] ?? 0);
+
+        $this->validateCsrfToken($data, "/categorias");
+
+        try {
+            $category = Category::findByIdForUser($id, $userId);
+
+            if (!$category) {
+                Message::error("Categoria não encontrada.");
+                redirect("/categorias");
+                return;
+            }
+
+            if (!$category->isSystemDefault()) {
+                Message::error("Essa categoria já é sua — não precisa duplicar.");
+                redirect("/categorias");
+                return;
+            }
+
+            $copy = $category->duplicateForUser($userId);
+
+            AuditLog::record(LogEvent::CATEGORY_CREATED, $userId, [
+                "category_id" => $copy->getId(),
+                "name" => $copy->getName(),
+                "duplicated_from" => $id,
+            ]);
+
+            Message::success("Categoria duplicada com sucesso. Agora você pode personalizá-la.");
+            redirect("/categorias");
+        } catch (\Throwable $exception) {
+            Logger::error("Falha ao duplicar categoria", [
+                "user_id" => $userId,
+                "category_id" => $id,
+                "exception" => $exception->getMessage(),
+            ]);
+            Message::error("Não foi possível duplicar a categoria. Tente novamente.");
+            redirect("/categorias");
+        }
+    }
 }
