@@ -17,6 +17,7 @@ final class LogEvent
     public const EMAIL_CHANGED = "email_changed";
     public const PASSWORD_CHANGED = "password_changed";
     public const PASSWORD_RESET_REQUESTED = "password_reset_requested";
+    public const PASSWORD_RESET_REQUESTED_UNKNOWN_EMAIL = "password_reset_requested_unknown_email";
     public const ACCOUNT_DELETED = "account_deleted";
     public const SUSPICIOUS_LOGIN_REPORTED = "suspicious_login_reported";
 
@@ -82,6 +83,7 @@ final class LogEvent
             self::EMAIL_CHANGED => "E-mail alterado",
             self::PASSWORD_CHANGED => "Senha alterada",
             self::PASSWORD_RESET_REQUESTED => "Redefinição de senha solicitada",
+            self::PASSWORD_RESET_REQUESTED_UNKNOWN_EMAIL => "Redefinição de senha solicitada para e-mail não cadastrado",
             self::ACCOUNT_DELETED => "Conta excluída",
 
             // Login social
