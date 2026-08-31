@@ -29,6 +29,27 @@
     <div class="tab-content">
 
         <!-- ===================== ABA 1: DADOS PESSOAIS ===================== -->
+
+        <div class="card mb-6">
+            <div class="card-body">
+                <h6 class="mb-4">Foto de Perfil</h6>
+                <form action="<?= url('/perfil/avatar') ?>" method="post" enctype="multipart/form-data"
+                      class="d-flex align-items-center gap-4">
+                    <?= csrf_input() ?>
+                    <img id="avatar-preview" src="<?= avatarSrc($user->getAvatar(), $user->getName()) ?>"
+                         alt="Avatar" class="rounded-circle" width="80" height="80" style="object-fit: cover;">
+                    <div>
+                        <input type="file" class="form-control" id="avatar" name="avatar"
+                               accept="image/jpeg,image/png,image/webp" required/>
+                        <small class="text-body-secondary">JPG, PNG ou WEBP — máximo 2MB.</small>
+                        <div class="mt-3">
+                            <button class="btn btn-primary btn-sm" type="submit">Salvar Foto</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="tab-pane fade show active" id="tab-dados">
             <div class="card">
                 <div class="card-body">
