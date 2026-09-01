@@ -215,36 +215,24 @@ class LoginSecurity
         $device = self::parseDevice($userAgent);
         $when = date("d/m/Y \à\s H:i");
         $locationText = $location ?: "Localização não identificada";
-
         $confirmUrl = url("/seguranca/verificar-login/{$token}");
-
-        $body = "
-            <div style='font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;'>
-                <h2 style='color: #0D3B36;'>Novo acesso detectado</h2>
-                <p>Identificamos um login na sua conta Moneta a partir de um dispositivo que não reconhecíamos:</p>
-                <table style='width: 100%; margin: 16px 0; font-size: 14px;'>
-                    <tr><td style='color: #6c757d; padding: 4px 0;'>Dispositivo</td><td><strong>{$device}</strong></td></tr>
-                    <tr><td style='color: #6c757d; padding: 4px 0;'>Localização</td><td><strong>{$locationText}</strong></td></tr>
-                    <tr><td style='color: #6c757d; padding: 4px 0;'>Data e hora</td><td><strong>{$when}</strong></td></tr>
-                    <tr><td style='color: #6c757d; padding: 4px 0;'>Endereço IP</td><td><strong>{$ipAddress}</strong></td></tr>
-                </table>
-                <p>Foi você?</p>
-                <p style='margin: 24px 0;'>
-                    <a href='{$confirmUrl}' style='background: #0D3B36; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;'>
-                        Verificar este acesso
-                    </a>
-                </p>
-                <p style='color: #6c757d; font-size: 12px;'>
-                    Se não reconhece esse acesso, clique no botão acima e selecione
-                    \"Não fui eu\" — vamos encerrar todas as sessões abertas e pedir
-                    uma nova senha imediatamente.
-                </p>
-            </div>
-        ";
-
         try {
             (new Email())
-                ->bootstrap("Novo acesso detectado — Moneta", $body, $email, $name, "login_alert", $userId)
+                ->bootstrapView(
+                    "Novo acesso detectado — Moneta",
+                    "alert_login",
+                    [
+                        "device" => $device,
+                        "locationText" => $locationText,
+                        "when" => $when,
+                        "ipAddress" => $ipAddress,
+                        "confirmUrl" => $confirmUrl,
+                    ],
+                    $email,
+                    $name,
+                    "login_alert",
+                    $userId
+                )
                 ->send();
         } catch (\Throwable $exception) {
             Logger::error("Falha ao enviar e-mail de alerta de login", [
