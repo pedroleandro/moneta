@@ -217,11 +217,14 @@ class AuthController extends Controller
 
         try {
             $verifyUrl = url("/verificar-email/" . $token);
-
             (new Email())
-                ->bootstrap(
+                ->bootstrapView(
                     "Confirme seu e-mail | " . APP_NAME,
-                    "Clique no link para confirmar seu e-mail: <a href=\"{$verifyUrl}\">{$verifyUrl}</a>.",
+                    "confirm_email",
+                    [
+                        "name" => $user->getName(),
+                        "verifyUrl" => $verifyUrl,
+                    ],
                     $user->getEmail(),
                     $user->getName(),
                     "email_verification",
@@ -279,13 +282,19 @@ class AuthController extends Controller
         if ($user) {
             $token = $user->setResetToken();
             $user->save();
+
             AuditLog::record(LogEvent::PASSWORD_RESET_REQUESTED, $user->getId());
+
             try {
                 $resetUrl = url("/resetar-senha/" . $token);
                 (new Email())
-                    ->bootstrap(
+                    ->bootstrapView(
                         "Redefinição de senha | " . APP_NAME,
-                        "Clique no link para redefinir sua senha: <a href=\"{$resetUrl}\">{$resetUrl}</a>. O link expira em 2 horas.",
+                        "reset_password",
+                        [
+                            "name" => $user->getName(),
+                            "resetUrl" => $resetUrl,
+                        ],
                         $user->getEmail(),
                         $user->getName(),
                         "password_reset",
@@ -293,8 +302,12 @@ class AuthController extends Controller
                     )
                     ->send();
             } catch (\Throwable $exception) {
-                // Falha de envio não deve expor detalhes ao usuário.
+                Logger::error("Falha ao enviar e-mail de redefinição de senha", [
+                    "user_id" => $user->getId(),
+                    "exception" => $exception->getMessage(),
+                ]);
             }
+
         } else {
             AuditLog::record(LogEvent::PASSWORD_RESET_REQUESTED_UNKNOWN_EMAIL, null, ["email" => $email]);
         }
@@ -420,11 +433,14 @@ class AuthController extends Controller
 
             try {
                 $verifyUrl = url("/verificar-email/" . $token);
-
                 (new Email())
-                    ->bootstrap(
+                    ->bootstrapView(
                         "Confirme seu e-mail | " . APP_NAME,
-                        "Clique no link para confirmar seu e-mail: <a href=\"{$verifyUrl}\">{$verifyUrl}</a>.",
+                        "confirm_email",
+                        [
+                            "name" => $user->getName(),
+                            "verifyUrl" => $verifyUrl,
+                        ],
                         $user->getEmail(),
                         $user->getName(),
                         "email_verification",
