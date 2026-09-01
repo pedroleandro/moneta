@@ -1,18 +1,17 @@
 <?php
-
 namespace App\Core;
-
+use League\Plates\Engine;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
-
 class Email
 {
     private \stdClass $data;
     private PHPMailer $mail;
-
+    private Engine $view;
     public function __construct()
     {
+        $this->view = new Engine(__DIR__ . "/../Views/Emails", "php");
         $this->mail = new PHPMailer(true);
         $this->mail->SMTPDebug = SMTP::DEBUG_OFF;
         $this->mail->isSMTP();
@@ -20,7 +19,6 @@ class Email
         $this->mail->CharSet = PHPMailer::CHARSET_UTF8;
         $this->mail->Host = MAIL_HOST;
         $this->mail->Port = MAIL_PORT;
-
         if (MAIL_DRIVER === "mailpit") {
             $this->mail->SMTPAuth = false;
             $this->mail->SMTPAutoTLS = false;
@@ -34,7 +32,6 @@ class Email
                 : PHPMailer::ENCRYPTION_STARTTLS;
         }
     }
-
     public function bootstrap(
         string $subject,
         string $body,
@@ -54,13 +51,24 @@ class Email
         return $this;
     }
 
+    public function bootstrapView(
+        string $subject,
+        string $viewName,
+        array $viewData,
+        string $toEmail,
+        string $toName,
+        string $type,
+        ?int $userId = null
+    ): self
+    {
+        $body = $this->view->render($viewName, $viewData);
+        return $this->bootstrap($subject, $body, $toEmail, $toName, $type, $userId);
+    }
     public function attach(string $filePath, string $fileName): self
     {
         $this->data->attachments[$filePath] = $fileName;
-
         return $this;
     }
-
     public function send(string $fromEmail = EMAIL_SEND, string $fromName = EMAIL_NAME)
     {
         if (empty($this->data)) {
@@ -85,7 +93,6 @@ class Email
             $this->mail->Subject = $this->data->subject;
             $this->mail->Body = $this->data->body;
             $this->mail->send();
-
             EmailLog::record(
                 toEmail: $this->data->toEmail,
                 subject: $this->data->subject,
@@ -93,14 +100,12 @@ class Email
                 status: "enviado",
                 userId: $this->data->userId
             );
-
             return true;
         } catch (Exception $mailException) {
             Logger::error("Falha ao enviar e-mail", [
                 "to" => $this->data->toEmail ?? null,
                 "exception" => $mailException->getMessage(),
             ]);
-
             EmailLog::record(
                 toEmail: $this->data->toEmail ?? "",
                 subject: $this->data->subject ?? "",
@@ -109,7 +114,6 @@ class Email
                 userId: $this->data->userId ?? null,
                 errorMessage: $mailException->getMessage()
             );
-
             throw new \InvalidArgumentException("Erro ao enviar e-mail: " . $mailException->getMessage());
         }
     }
