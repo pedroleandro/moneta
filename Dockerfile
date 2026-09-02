@@ -11,20 +11,24 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Instala e habilita o Xdebug
-RUN pecl install xdebug redis \
-    && docker-php-ext-enable xdebug redis
+ARG BUILD_ENV=local
 
-# Configuração do Xdebug
-RUN { \
-    echo 'xdebug.mode=develop,debug'; \
-    echo 'xdebug.start_with_request=yes'; \
-    echo 'xdebug.client_host=host.docker.internal'; \
-    echo 'xdebug.client_port=9003'; \
-    echo 'xdebug.var_display_max_depth=10'; \
-    echo 'xdebug.var_display_max_children=256'; \
-    echo 'xdebug.var_display_max_data=2048'; \
-} > /usr/local/etc/php/conf.d/xdebug.ini
+RUN pecl install redis \
+    && docker-php-ext-enable redis
+
+RUN if [ "$BUILD_ENV" = "local" ]; then \
+        pecl install xdebug \
+        && docker-php-ext-enable xdebug \
+        && { \
+            echo 'xdebug.mode=develop,debug'; \
+            echo 'xdebug.start_with_request=yes'; \
+            echo 'xdebug.client_host=host.docker.internal'; \
+            echo 'xdebug.client_port=9003'; \
+            echo 'xdebug.var_display_max_depth=10'; \
+            echo 'xdebug.var_display_max_children=256'; \
+            echo 'xdebug.var_display_max_data=2048'; \
+        } > /usr/local/etc/php/conf.d/xdebug.ini; \
+    fi
 
 # Habilita mod_rewrite do Apache (necessário para o .htaccess funcionar)
 RUN a2enmod rewrite

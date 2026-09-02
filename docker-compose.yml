@@ -17,7 +17,7 @@ services:
     image: mysql:8.0
     container_name: moneta_db
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: moneta
     volumes:
       - moneta_db_data:/var/lib/mysql
