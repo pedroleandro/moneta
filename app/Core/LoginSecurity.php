@@ -6,6 +6,9 @@ use Random\RandomException;
 
 class LoginSecurity
 {
+    private const DEVICE_COOKIE_NAME = "moneta_device";
+    private const DEVICE_COOKIE_DAYS = 180;
+
     public static function checkAndNotify(
         int $userId,
         string $email,
@@ -27,6 +30,8 @@ class LoginSecurity
                 "UPDATE known_devices SET last_seen_at = NOW(), ip_address = :ip WHERE id = :id"
             );
             $update->execute(["ip" => $ipAddress, "id" => $existing->id]);
+
+            self::ensureDeviceToken($connection, (int)$existing->id);
             return;
         }
 
@@ -44,6 +49,9 @@ class LoginSecurity
             "location" => $location,
         ]);
 
+        $newDeviceId = (int)$connection->lastInsertId();
+        self::ensureDeviceToken($connection, $newDeviceId);
+
         $token = bin2hex(random_bytes(32));
 
         $tokenInsert = $connection->prepare(
@@ -59,6 +67,59 @@ class LoginSecurity
         ]);
 
         self::sendAlertEmail($userId, $email, $name, $token, $ipAddress, $userAgent, $location);
+    }
+
+    private static function ensureDeviceToken(\PDO $connection, int $deviceId): void
+    {
+        $existingToken = $_COOKIE[self::DEVICE_COOKIE_NAME] ?? null;
+
+        if ($existingToken) {
+            $check = $connection->prepare(
+                "SELECT id FROM known_devices WHERE id = :id AND device_token_hash = :hash LIMIT 1"
+            );
+            $check->execute(["id" => $deviceId, "hash" => hash("sha256", $existingToken)]);
+
+            if ($check->fetch()) {
+                // Cookie já bate com esse dispositivo — nada a fazer.
+                return;
+            }
+        }
+
+        try {
+            $newToken = bin2hex(random_bytes(32));
+        } catch (RandomException) {
+            return;
+        }
+
+        $connection->prepare(
+            "UPDATE known_devices SET device_token_hash = :hash WHERE id = :id"
+        )->execute(["hash" => hash("sha256", $newToken), "id" => $deviceId]);
+
+        setcookie(
+            self::DEVICE_COOKIE_NAME,
+            $newToken,
+            [
+                "expires" => time() + (self::DEVICE_COOKIE_DAYS * 86400),
+                "path" => "/",
+                "secure" => APP_ENV !== "local",
+                "httponly" => true,
+                "samesite" => "Lax",
+            ]
+        );
+    }
+
+    public static function isDeviceTrusted(int $userId, string $deviceToken): bool
+    {
+        $connection = Connection::getInstance();
+
+        $statement = $connection->prepare(
+            "SELECT id FROM known_devices
+             WHERE user_id = :user_id AND device_token_hash = :hash AND trusted = 1
+             LIMIT 1"
+        );
+        $statement->execute(["user_id" => $userId, "hash" => hash("sha256", $deviceToken)]);
+
+        return (bool)$statement->fetch();
     }
 
     /**
@@ -83,6 +144,12 @@ class LoginSecurity
         $connection->prepare(
             "UPDATE login_verification_tokens SET used_at = NOW(), reported_suspicious_at = NOW() WHERE id = :id"
         )->execute(["id" => $row->id]);
+
+        $suspiciousDeviceHash = self::computeDeviceHash($row->user_agent ?? "", $row->ip_address ?? "");
+        $connection->prepare(
+            "UPDATE known_devices SET trusted = 0, device_token_hash = NULL
+             WHERE user_id = :user_id AND device_hash = :hash"
+        )->execute(["user_id" => $row->user_id, "hash" => $suspiciousDeviceHash]);
 
         \App\Core\DatabaseSessionHandler::destroyAllForUser($row->user_id);
 
@@ -216,6 +283,7 @@ class LoginSecurity
         $when = date("d/m/Y \à\s H:i");
         $locationText = $location ?: "Localização não identificada";
         $confirmUrl = url("/seguranca/verificar-login/{$token}");
+
         try {
             (new Email())
                 ->bootstrapView(
