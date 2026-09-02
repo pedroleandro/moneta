@@ -76,4 +76,62 @@ class RateLimiter
             return 0;
         }
     }
+
+    private static function deviceKey(string $email, string $deviceToken): string
+    {
+        return "login_attempts_device:" . md5(strtolower($email) . "|" . $deviceToken);
+    }
+
+    public static function tooManyAttemptsForDevice(string $email, string $deviceToken): bool
+    {
+        try {
+            $key = self::deviceKey($email, $deviceToken);
+            $attempts = (int)self::connection()->get($key);
+
+            return $attempts >= self::MAX_ATTEMPTS;
+        } catch (\Throwable $exception) {
+            Logger::error("RateLimiter (dispositivo) indisponível", ["exception" => $exception->getMessage()]);
+            return false;
+        }
+    }
+
+    public static function hitForDevice(string $email, string $deviceToken, bool $successful = false): void
+    {
+        try {
+            $key = self::deviceKey($email, $deviceToken);
+            $redis = self::connection();
+
+            if ($successful) {
+                self::clearForDevice($email, $deviceToken);
+                return;
+            }
+
+            $attempts = $redis->incr($key);
+
+            if ($attempts === 1) {
+                $redis->expire($key, self::DECAY_SECONDS);
+            }
+        } catch (\Throwable $exception) {
+            Logger::error("RateLimiter (dispositivo) indisponível", ["exception" => $exception->getMessage()]);
+        }
+    }
+
+    public static function clearForDevice(string $email, string $deviceToken): void
+    {
+        try {
+            self::connection()->del(self::deviceKey($email, $deviceToken));
+        } catch (\Throwable $exception) {
+            Logger::error("RateLimiter (dispositivo) indisponível", ["exception" => $exception->getMessage()]);
+        }
+    }
+
+    public static function minutesRemainingForDevice(string $email, string $deviceToken): int
+    {
+        try {
+            $ttl = self::connection()->ttl(self::deviceKey($email, $deviceToken));
+            return $ttl > 0 ? (int)ceil($ttl / 60) : 0;
+        } catch (\Throwable $exception) {
+            return 0;
+        }
+    }
 }
