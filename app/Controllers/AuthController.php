@@ -62,18 +62,30 @@ class AuthController extends Controller
             return;
         }
 
-        if (RateLimiter::tooManyAttempts($email, $ip)) {
-            $minutos = RateLimiter::minutesRemaining($email, $ip);
-            AuditLog::record(LogEvent::ACCOUNT_LOCKED, null, ["email" => $email]);
+        $user = User::findByEmail($email);
+        $deviceToken = $_COOKIE["moneta_device"] ?? null;
+        $isTrustedDevice = $user && $deviceToken && LoginSecurity::isDeviceTrusted($user->getId(), $deviceToken);
+
+        $tooManyAttempts = $isTrustedDevice
+            ? RateLimiter::tooManyAttemptsForDevice($email, $deviceToken)
+            : RateLimiter::tooManyAttempts($email, $ip);
+
+        if ($tooManyAttempts) {
+            $minutos = $isTrustedDevice
+                ? RateLimiter::minutesRemainingForDevice($email, $deviceToken)
+                : RateLimiter::minutesRemaining($email, $ip);
+            AuditLog::record(LogEvent::ACCOUNT_LOCKED, $user?->getId(), ["email" => $email]);
             Message::error("Muitas tentativas de login. Tente novamente em {$minutos} minuto(s).");
             redirect("/entrar");
             return;
         }
 
-        $user = User::findByEmail($email);
-
         if (!$user || !$user->passwordVerify($password)) {
-            RateLimiter::hit($email, $ip, false);
+            if ($isTrustedDevice) {
+                RateLimiter::hitForDevice($email, $deviceToken, false);
+            } else {
+                RateLimiter::hit($email, $ip, false);
+            }
             AuditLog::record(LogEvent::LOGIN_FAILED, $user?->getId(), ["email" => $email]);
             flash_old(["email" => $email]);
             Message::error("E-mail ou senha inválidos.");
@@ -87,7 +99,11 @@ class AuthController extends Controller
             return;
         }
 
-        RateLimiter::hit($email, $ip, true);
+        if ($isTrustedDevice) {
+            RateLimiter::hitForDevice($email, $deviceToken, true);
+        } else {
+            RateLimiter::hit($email, $ip, true);
+        }
 
         $session = new Session();
         $session->regenerate();
