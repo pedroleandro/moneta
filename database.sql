@@ -1,273 +1,485 @@
--- =========================================================
--- MONETA — SCHEMA COMPLETO
--- =========================================================
-
--- =========================================
--- USERS
--- =========================================
-CREATE TABLE users
+create table email_logs
 (
-    id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name              VARCHAR(150) NOT NULL,
-    email             VARCHAR(150) NOT NULL UNIQUE,
-    password          VARCHAR(255) NULL, -- nulo se o usuário só usa login social
-    avatar            VARCHAR(255) NULL,
-    email_verified_at DATETIME NULL,
-    created_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at        DATETIME NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    id            bigint unsigned auto_increment
+        primary key,
+    user_id       bigint unsigned                    null,
+    to_email      varchar(150)                       not null,
+    subject       varchar(255)                       not null,
+    type          varchar(50)                        not null,
+    status        enum ('enviado', 'falhou')         not null,
+    error_message text                               null,
+    delivered_at  datetime                           null,
+    created_at    datetime default CURRENT_TIMESTAMP not null
+);
 
--- =========================================
--- SOCIAL ACCOUNTS (login social: Google/Facebook)
--- =========================================
-CREATE TABLE social_accounts
-(
-    id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id       BIGINT UNSIGNED NOT NULL,
-    provider      ENUM('google', 'facebook') NOT NULL,
-    provider_id   VARCHAR(255) NOT NULL,
-    access_token  TEXT NULL,
-    refresh_token TEXT NULL,
-    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at    DATETIME NULL,
-    UNIQUE KEY uq_provider_account (provider, provider_id),
-    CONSTRAINT fk_social_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+create index to_email
+    on email_logs (to_email);
 
--- =========================================
--- BANK ACCOUNTS (contas bancárias)
--- =========================================
-CREATE TABLE bank_accounts
-(
-    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id         BIGINT UNSIGNED NOT NULL,
-    name            VARCHAR(100)   NOT NULL,
-    type            ENUM('corrente', 'poupanca', 'carteira', 'investimento') NOT NULL,
-    bank_name       VARCHAR(100) NULL,
-    initial_balance DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    current_balance DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    color           VARCHAR(7) NULL,
-    icon            VARCHAR(50) NULL,
-    is_active       BOOLEAN        NOT NULL DEFAULT TRUE,
-    created_at      DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at      DATETIME NULL,
-    CONSTRAINT fk_bank_account_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+create index type
+    on email_logs (type);
 
--- =========================================
--- CREDIT CARDS
--- =========================================
-CREATE TABLE credit_cards
-(
-    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id     BIGINT UNSIGNED NOT NULL,
-    name        VARCHAR(100)   NOT NULL,
-    card_limit  DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    closing_day TINYINT UNSIGNED NOT NULL,
-    due_day     TINYINT UNSIGNED NOT NULL,
-    color       VARCHAR(7) NULL,
-    icon        VARCHAR(50) NULL,
-    is_active   BOOLEAN        NOT NULL DEFAULT TRUE,
-    created_at  DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at  DATETIME NULL,
-    CONSTRAINT fk_card_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+create index user_id
+    on email_logs (user_id);
 
--- =========================================
--- CARD USERS (pessoas que usam o cartão de outra pessoa)
--- =========================================
-CREATE TABLE card_users
+create table users
 (
-    id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    credit_card_id BIGINT UNSIGNED NOT NULL,
-    owner_user_id  BIGINT UNSIGNED NOT NULL,
-    name           VARCHAR(150) NOT NULL,
-    phone          VARCHAR(20) NULL,
-    notes          TEXT NULL,
-    created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at     DATETIME NULL,
-    CONSTRAINT fk_carduser_card FOREIGN KEY (credit_card_id) REFERENCES credit_cards (id) ON DELETE CASCADE,
-    CONSTRAINT fk_carduser_owner FOREIGN KEY (owner_user_id) REFERENCES users (id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    id                         bigint unsigned auto_increment
+        primary key,
+    name                       varchar(150)                       not null,
+    email                      varchar(150)                       not null,
+    password                   varchar(255)                       null,
+    avatar                     varchar(255)                       null,
+    email_verified_at          datetime                           null,
+    reset_token                varchar(64)                        null,
+    reset_expires_at           datetime                           null,
+    email_verification_token   varchar(64)                        null,
+    email_verification_sent_at datetime                           null,
+    created_at                 datetime default CURRENT_TIMESTAMP not null,
+    updated_at                 datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted_at                 datetime                           null,
+    constraint email
+        unique (email),
+    constraint uq_users_email
+        unique (email)
+);
 
--- =========================================
--- CATEGORIES
--- =========================================
-CREATE TABLE categories
+create table audit_logs
 (
-    id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id    BIGINT UNSIGNED NULL,
-    parent_id  BIGINT UNSIGNED NULL,
-    name       VARCHAR(100) NOT NULL,
-    type       ENUM('receita', 'despesa') NOT NULL,
-    color      VARCHAR(7) NULL,
-    icon       VARCHAR(50) NULL,
-    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at DATETIME NULL,
-    CONSTRAINT fk_category_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_category_parent FOREIGN KEY (parent_id) REFERENCES categories (id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    id          bigint unsigned auto_increment
+        primary key,
+    user_id     bigint unsigned                    null,
+    event       varchar(100)                       not null,
+    description varchar(255)                       null,
+    ip_address  varchar(45)                        null,
+    user_agent  varchar(255)                       null,
+    metadata    json                               null,
+    created_at  datetime default CURRENT_TIMESTAMP not null,
+    constraint fk_audit_user
+        foreign key (user_id) references users (id)
+            on delete set null
+);
 
--- =========================================
--- CARD INVOICES (faturas do cartão)
--- =========================================
-CREATE TABLE card_invoices
-(
-    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    credit_card_id  BIGINT UNSIGNED NOT NULL,
-    reference_month DATE           NOT NULL,
-    closing_date    DATE           NOT NULL,
-    due_date        DATE           NOT NULL,
-    total_amount    DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    status          ENUM('aberta', 'fechada', 'paga') NOT NULL DEFAULT 'aberta',
-    created_at      DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at      DATETIME NULL,
-    UNIQUE KEY uq_card_month (credit_card_id, reference_month),
-    CONSTRAINT fk_invoice_card FOREIGN KEY (credit_card_id) REFERENCES credit_cards (id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+create index idx_user_event
+    on audit_logs (user_id, event, created_at);
 
--- =========================================
--- RECURRENCES (lançamentos recorrentes automáticos)
--- =========================================
-CREATE TABLE recurrences
+create table bank_accounts
 (
-    id                   BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id              BIGINT UNSIGNED NOT NULL,
-    category_id          BIGINT UNSIGNED NOT NULL,
-    bank_account_id      BIGINT UNSIGNED NULL,
-    credit_card_id       BIGINT UNSIGNED NULL,
-    type                 ENUM('receita', 'despesa') NOT NULL,
-    description          VARCHAR(255)   NOT NULL,
-    amount               DECIMAL(12, 2) NOT NULL,
-    frequency            ENUM('diaria', 'semanal', 'mensal', 'anual') NOT NULL DEFAULT 'mensal',
-    day_of_month         TINYINT UNSIGNED NULL,   -- usado quando frequency = mensal/anual
-    start_date           DATE           NOT NULL,
-    end_date             DATE NULL,               -- nulo = sem data pra terminar
-    next_occurrence_date DATE           NOT NULL, -- próxima data que o job deve gerar
-    is_active            BOOLEAN        NOT NULL DEFAULT TRUE,
-    created_at           DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at           DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at           DATETIME NULL,
-    CONSTRAINT fk_recurrence_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_recurrence_category FOREIGN KEY (category_id) REFERENCES categories (id),
-    CONSTRAINT fk_recurrence_account FOREIGN KEY (bank_account_id) REFERENCES bank_accounts (id) ON DELETE CASCADE,
-    CONSTRAINT fk_recurrence_card FOREIGN KEY (credit_card_id) REFERENCES credit_cards (id) ON DELETE CASCADE,
-    INDEX                idx_recurrence_next (next_occurrence_date, is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    id              bigint unsigned auto_increment
+        primary key,
+    user_id         bigint unsigned                                                 not null,
+    name            varchar(100)                                                    not null,
+    type            enum ('checking', 'savings', 'wallet', 'investment', 'payment') not null,
+    bank_name       varchar(100)                                                    null,
+    initial_balance decimal(12, 2) default 0.00                                     not null,
+    current_balance decimal(12, 2) default 0.00                                     not null,
+    color           varchar(7)                                                      null,
+    icon            varchar(50)                                                     null,
+    is_active       tinyint(1)     default 1                                        not null,
+    created_at      datetime       default CURRENT_TIMESTAMP                        not null,
+    updated_at      datetime       default CURRENT_TIMESTAMP                        not null on update CURRENT_TIMESTAMP,
+    deleted_at      datetime                                                        null,
+    constraint fk_bank_account_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
 
--- =========================================
--- INSTALLMENT PURCHASES (compras parceladas no cartão)
--- =========================================
-CREATE TABLE installment_purchases
+create table account_transfers
 (
-    id                     BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id                BIGINT UNSIGNED NOT NULL,
-    credit_card_id         BIGINT UNSIGNED NOT NULL,
-    category_id            BIGINT UNSIGNED NOT NULL,
-    card_user_id           BIGINT UNSIGNED NULL,      -- se a compra parcelada é de outra pessoa
-    description            VARCHAR(255)   NOT NULL,
-    total_amount           DECIMAL(12, 2) NOT NULL,
-    installments_count     TINYINT UNSIGNED NOT NULL, -- ex: 10 (10x)
-    first_installment_date DATE           NOT NULL,   -- data da 1ª parcela
-    created_at             DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at             DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at             DATETIME NULL,
-    CONSTRAINT fk_installment_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_installment_card FOREIGN KEY (credit_card_id) REFERENCES credit_cards (id) ON DELETE CASCADE,
-    CONSTRAINT fk_installment_category FOREIGN KEY (category_id) REFERENCES categories (id),
-    CONSTRAINT fk_installment_carduser FOREIGN KEY (card_user_id) REFERENCES card_users (id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    id              bigint unsigned auto_increment
+        primary key,
+    user_id         bigint unsigned                    not null,
+    from_account_id bigint unsigned                    not null,
+    to_account_id   bigint unsigned                    not null,
+    amount          decimal(12, 2)                     not null,
+    transfer_date   date                               not null,
+    description     varchar(255)                       null,
+    created_at      datetime default CURRENT_TIMESTAMP not null,
+    updated_at      datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted_at      datetime                           null,
+    constraint fk_transfer_from
+        foreign key (from_account_id) references bank_accounts (id)
+            on delete cascade,
+    constraint fk_transfer_to
+        foreign key (to_account_id) references bank_accounts (id)
+            on delete cascade,
+    constraint fk_transfer_user
+        foreign key (user_id) references users (id)
+            on delete cascade,
+    check (`from_account_id` <> `to_account_id`)
+);
 
--- =========================================
--- ACCOUNT TRANSFERS (transferência entre contas)
--- =========================================
-CREATE TABLE account_transfers
+create table card_users
 (
-    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id         BIGINT UNSIGNED NOT NULL,
-    from_account_id BIGINT UNSIGNED NOT NULL,
-    to_account_id   BIGINT UNSIGNED NOT NULL,
-    amount          DECIMAL(12, 2) NOT NULL,
-    transfer_date   DATE           NOT NULL,
-    description     VARCHAR(255) NULL,
-    created_at      DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at      DATETIME NULL,
-    CONSTRAINT fk_transfer_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_transfer_from FOREIGN KEY (from_account_id) REFERENCES bank_accounts (id) ON DELETE CASCADE,
-    CONSTRAINT fk_transfer_to FOREIGN KEY (to_account_id) REFERENCES bank_accounts (id) ON DELETE CASCADE,
-    CHECK (from_account_id <> to_account_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    id            bigint unsigned auto_increment
+        primary key,
+    owner_user_id bigint unsigned                    not null,
+    name          varchar(150)                       not null,
+    phone         varchar(20)                        null,
+    notes         text                               null,
+    created_at    datetime default CURRENT_TIMESTAMP not null,
+    updated_at    datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted_at    datetime                           null,
+    constraint fk_carduser_owner
+        foreign key (owner_user_id) references users (id)
+            on delete cascade
+);
 
--- =========================================
--- TRANSACTIONS (lançamentos)
--- =========================================
-CREATE TABLE transactions
+create table categories
 (
-    id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id                 BIGINT UNSIGNED NOT NULL,
-    category_id             BIGINT UNSIGNED NOT NULL,
-    bank_account_id         BIGINT UNSIGNED NULL,
-    credit_card_id          BIGINT UNSIGNED NULL,
-    card_invoice_id         BIGINT UNSIGNED NULL,
-    card_user_id            BIGINT UNSIGNED NULL,  -- pessoa que usou o cartão (se não for o dono)
-    recurrence_id           BIGINT UNSIGNED NULL,  -- veio de uma recorrência
-    installment_purchase_id BIGINT UNSIGNED NULL,  -- veio de uma compra parcelada
-    installment_number      TINYINT UNSIGNED NULL, -- número da parcela (ex: 3 de 10)
-    transfer_id             BIGINT UNSIGNED NULL,  -- veio de uma transferência entre contas
-    type                    ENUM('receita', 'despesa', 'transferencia') NOT NULL,
-    description             VARCHAR(255)   NOT NULL,
-    amount                  DECIMAL(12, 2) NOT NULL,
-    transaction_date        DATE           NOT NULL,
-    status                  ENUM('pendente', 'confirmado') NOT NULL DEFAULT 'pendente',
-    created_at              DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at              DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at              DATETIME NULL,
-    CONSTRAINT fk_transaction_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_transaction_category FOREIGN KEY (category_id) REFERENCES categories (id),
-    CONSTRAINT fk_transaction_account FOREIGN KEY (bank_account_id) REFERENCES bank_accounts (id) ON DELETE CASCADE,
-    CONSTRAINT fk_transaction_card FOREIGN KEY (credit_card_id) REFERENCES credit_cards (id) ON DELETE CASCADE,
-    CONSTRAINT fk_transaction_invoice FOREIGN KEY (card_invoice_id) REFERENCES card_invoices (id) ON DELETE SET NULL,
-    CONSTRAINT fk_transaction_carduser FOREIGN KEY (card_user_id) REFERENCES card_users (id) ON DELETE SET NULL,
-    CONSTRAINT fk_transaction_recurrence FOREIGN KEY (recurrence_id) REFERENCES recurrences (id) ON DELETE SET NULL,
-    CONSTRAINT fk_transaction_installment FOREIGN KEY (installment_purchase_id) REFERENCES installment_purchases (id) ON DELETE SET NULL,
-    CONSTRAINT fk_transaction_transfer FOREIGN KEY (transfer_id) REFERENCES account_transfers (id) ON DELETE SET NULL,
-    INDEX                   idx_transaction_date (transaction_date),
-    INDEX                   idx_transaction_user_type (user_id, type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    id         bigint unsigned auto_increment
+        primary key,
+    user_id    bigint unsigned                    null,
+    parent_id  bigint unsigned                    null,
+    name       varchar(100)                       not null,
+    type       enum ('receita', 'despesa')        not null,
+    color      varchar(7)                         null,
+    icon       varchar(50)                        null,
+    created_at datetime default CURRENT_TIMESTAMP not null,
+    updated_at datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted_at datetime                           null,
+    constraint fk_category_parent
+        foreign key (parent_id) references categories (id)
+            on delete set null,
+    constraint fk_category_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
 
--- =========================================
--- USER PROFILES (dados pessoais e preferências)
--- =========================================
-CREATE TABLE user_profiles
+create table credit_cards
 (
-    id                     BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id                BIGINT UNSIGNED NOT NULL UNIQUE,
-    cpf                    VARCHAR(14) NULL UNIQUE, -- formato: 000.000.000-00
-    phone                  VARCHAR(20) NULL,
-    birth_date             DATE NULL,
-    gender                 ENUM('masculino', 'feminino', 'outro', 'prefiro_nao_informar') NULL,
-    zip_code               VARCHAR(9) NULL,
-    address                VARCHAR(255) NULL,
-    address_number         VARCHAR(20) NULL,
-    neighborhood           VARCHAR(100) NULL,
-    city                   VARCHAR(100) NULL,
-    state                  CHAR(2) NULL,
-    currency               VARCHAR(3)  NOT NULL DEFAULT 'BRL',
-    timezone               VARCHAR(50) NOT NULL DEFAULT 'America/Sao_Paulo',
-    theme                  ENUM('claro', 'escuro') NOT NULL DEFAULT 'claro',
-    notify_invoice_due     BOOLEAN     NOT NULL DEFAULT TRUE,
-    notify_budget_exceeded BOOLEAN     NOT NULL DEFAULT TRUE,
-    bio                    VARCHAR(255) NULL,
-    created_at             DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at             DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at             DATETIME NULL,
-    CONSTRAINT fk_profile_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    id          bigint unsigned auto_increment
+        primary key,
+    user_id     bigint unsigned                          not null,
+    name        varchar(100)                             not null,
+    card_limit  decimal(12, 2) default 0.00              not null,
+    closing_day tinyint unsigned                         not null,
+    due_day     tinyint unsigned                         not null,
+    color       varchar(7)                               null,
+    icon        varchar(50)                              null,
+    is_active   tinyint(1)     default 1                 not null,
+    created_at  datetime       default CURRENT_TIMESTAMP not null,
+    updated_at  datetime       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted_at  datetime                                 null,
+    constraint fk_card_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create table card_invoices
+(
+    id              bigint unsigned auto_increment
+        primary key,
+    credit_card_id  bigint unsigned                                              not null,
+    reference_month date                                                         not null,
+    closing_date    date                                                         not null,
+    due_date        date                                                         not null,
+    total_amount    decimal(12, 2)                     default 0.00              not null,
+    status          enum ('aberta', 'fechada', 'paga') default 'aberta'          not null,
+    created_at      datetime                           default CURRENT_TIMESTAMP not null,
+    updated_at      datetime                           default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted_at      datetime                                                     null,
+    constraint uq_card_month
+        unique (credit_card_id, reference_month),
+    constraint fk_invoice_card
+        foreign key (credit_card_id) references credit_cards (id)
+            on delete cascade
+);
+
+create table card_user_credit_cards
+(
+    id             bigint unsigned auto_increment
+        primary key,
+    card_user_id   bigint unsigned                    not null,
+    credit_card_id bigint unsigned                    not null,
+    created_at     datetime default CURRENT_TIMESTAMP not null,
+    constraint uq_person_card
+        unique (card_user_id, credit_card_id),
+    constraint fk_cucc_card
+        foreign key (credit_card_id) references credit_cards (id)
+            on delete cascade,
+    constraint fk_cucc_carduser
+        foreign key (card_user_id) references card_users (id)
+            on delete cascade
+);
+
+create table installment_purchases
+(
+    id                     bigint unsigned auto_increment
+        primary key,
+    user_id                bigint unsigned                    not null,
+    credit_card_id         bigint unsigned                    not null,
+    category_id            bigint unsigned                    not null,
+    card_user_id           bigint unsigned                    null,
+    description            varchar(255)                       not null,
+    total_amount           decimal(12, 2)                     not null,
+    installments_count     tinyint unsigned                   not null,
+    first_installment_date date                               not null,
+    created_at             datetime default CURRENT_TIMESTAMP not null,
+    updated_at             datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted_at             datetime                           null,
+    constraint fk_installment_card
+        foreign key (credit_card_id) references credit_cards (id)
+            on delete cascade,
+    constraint fk_installment_carduser
+        foreign key (card_user_id) references card_users (id)
+            on delete set null,
+    constraint fk_installment_category
+        foreign key (category_id) references categories (id),
+    constraint fk_installment_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create table known_devices
+(
+    id                bigint unsigned auto_increment
+        primary key,
+    user_id           bigint unsigned                      not null,
+    device_hash       varchar(64)                          not null,
+    device_token_hash varchar(64)                          null,
+    user_agent        varchar(255)                         null,
+    ip_address        varchar(45)                          null,
+    location          varchar(150)                         null,
+    trusted           tinyint(1) default 1                 not null,
+    first_seen_at     datetime   default CURRENT_TIMESTAMP not null,
+    last_seen_at      datetime   default CURRENT_TIMESTAMP not null,
+    constraint uq_user_device
+        unique (user_id, device_hash),
+    constraint fk_known_devices_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create index idx_device_token_hash
+    on known_devices (device_token_hash);
+
+create table login_verification_tokens
+(
+    id                     bigint unsigned auto_increment
+        primary key,
+    user_id                bigint unsigned                    not null,
+    token                  varchar(64)                        not null,
+    ip_address             varchar(45)                        null,
+    user_agent             varchar(255)                       null,
+    location               varchar(150)                       null,
+    used_at                datetime                           null,
+    reported_suspicious_at datetime                           null,
+    created_at             datetime default CURRENT_TIMESTAMP not null,
+    expires_at             datetime                           not null,
+    constraint token
+        unique (token),
+    constraint fk_login_verification_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create table recurrences
+(
+    id                   bigint unsigned auto_increment
+        primary key,
+    user_id              bigint unsigned                                                         not null,
+    category_id          bigint unsigned                                                         not null,
+    bank_account_id      bigint unsigned                                                         null,
+    credit_card_id       bigint unsigned                                                         null,
+    type                 enum ('receita', 'despesa')                                             not null,
+    description          varchar(255)                                                            not null,
+    amount               decimal(12, 2)                                                          not null,
+    frequency            enum ('diaria', 'semanal', 'mensal', 'anual') default 'mensal'          not null,
+    day_of_month         tinyint unsigned                                                        null,
+    start_date           date                                                                    not null,
+    end_date             date                                                                    null,
+    next_occurrence_date date                                                                    not null,
+    is_active            tinyint(1)                                    default 1                 not null,
+    created_at           datetime                                      default CURRENT_TIMESTAMP not null,
+    updated_at           datetime                                      default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted_at           datetime                                                                null,
+    constraint fk_recurrence_account
+        foreign key (bank_account_id) references bank_accounts (id)
+            on delete cascade,
+    constraint fk_recurrence_card
+        foreign key (credit_card_id) references credit_cards (id)
+            on delete cascade,
+    constraint fk_recurrence_category
+        foreign key (category_id) references categories (id),
+    constraint fk_recurrence_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create index idx_recurrence_next
+    on recurrences (next_occurrence_date, is_active);
+
+create table sessions
+(
+    id            varchar(128)                       not null
+        primary key,
+    user_id       bigint unsigned                    null,
+    ip_address    varchar(45)                        null,
+    user_agent    varchar(255)                       null,
+    payload       longtext                           not null,
+    last_activity int unsigned                       not null,
+    created_at    datetime default CURRENT_TIMESTAMP not null,
+    constraint fk_sessions_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create index idx_sessions_last_activity
+    on sessions (last_activity);
+
+create index idx_sessions_user
+    on sessions (user_id);
+
+create table social_accounts
+(
+    id            bigint unsigned auto_increment
+        primary key,
+    user_id       bigint unsigned                    not null,
+    provider      enum ('google', 'facebook')        not null,
+    provider_id   varchar(255)                       not null,
+    access_token  text                               null,
+    refresh_token text                               null,
+    created_at    datetime default CURRENT_TIMESTAMP not null,
+    updated_at    datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted_at    datetime                           null,
+    constraint uq_provider_account
+        unique (provider, provider_id),
+    constraint fk_social_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create table transactions
+(
+    id                      bigint unsigned auto_increment
+        primary key,
+    user_id                 bigint unsigned                                           not null,
+    category_id             bigint unsigned                                           null,
+    bank_account_id         bigint unsigned                                           null,
+    credit_card_id          bigint unsigned                                           null,
+    card_invoice_id         bigint unsigned                                           null,
+    card_user_id            bigint unsigned                                           null,
+    recurrence_id           bigint unsigned                                           null,
+    installment_purchase_id bigint unsigned                                           null,
+    installment_number      tinyint unsigned                                          null,
+    transfer_id             bigint unsigned                                           null,
+    type                    enum ('receita', 'despesa', 'transferencia')              not null,
+    description             varchar(255)                                              not null,
+    amount                  decimal(12, 2)                                            not null,
+    transaction_date        date                                                      not null,
+    status                  enum ('pendente', 'confirmado') default 'pendente'        not null,
+    created_at              datetime                        default CURRENT_TIMESTAMP not null,
+    updated_at              datetime                        default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted_at              datetime                                                  null,
+    constraint fk_transaction_account
+        foreign key (bank_account_id) references bank_accounts (id)
+            on delete cascade,
+    constraint fk_transaction_card
+        foreign key (credit_card_id) references credit_cards (id)
+            on delete cascade,
+    constraint fk_transaction_carduser
+        foreign key (card_user_id) references card_users (id)
+            on delete set null,
+    constraint fk_transaction_category
+        foreign key (category_id) references categories (id),
+    constraint fk_transaction_installment
+        foreign key (installment_purchase_id) references installment_purchases (id)
+            on delete set null,
+    constraint fk_transaction_invoice
+        foreign key (card_invoice_id) references card_invoices (id)
+            on delete set null,
+    constraint fk_transaction_recurrence
+        foreign key (recurrence_id) references recurrences (id)
+            on delete set null,
+    constraint fk_transaction_transfer
+        foreign key (transfer_id) references account_transfers (id)
+            on delete set null,
+    constraint fk_transaction_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create table card_invoice_payments
+(
+    id                  bigint unsigned auto_increment
+        primary key,
+    card_invoice_id     bigint unsigned                    not null,
+    bank_account_id     bigint unsigned                    null,
+    transaction_id      bigint unsigned                    null,
+    paying_card_user_id bigint unsigned                    null,
+    amount              decimal(12, 2)                     not null,
+    payment_date        date                               not null,
+    notes               varchar(255)                       null,
+    created_at          datetime default CURRENT_TIMESTAMP not null,
+    constraint fk_invoice_payment_account
+        foreign key (bank_account_id) references bank_accounts (id)
+            on delete set null,
+    constraint fk_invoice_payment_invoice
+        foreign key (card_invoice_id) references card_invoices (id)
+            on delete cascade,
+    constraint fk_invoice_payment_paying_person
+        foreign key (paying_card_user_id) references card_users (id)
+            on delete set null,
+    constraint fk_invoice_payment_transaction
+        foreign key (transaction_id) references transactions (id)
+            on delete set null
+);
+
+create table transaction_splits
+(
+    id             bigint unsigned auto_increment
+        primary key,
+    transaction_id bigint unsigned                    not null,
+    card_user_id   bigint unsigned                    not null,
+    amount         decimal(12, 2)                     not null,
+    created_at     datetime default CURRENT_TIMESTAMP not null,
+    updated_at     datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    constraint uq_split_transaction_person
+        unique (transaction_id, card_user_id),
+    constraint fk_split_carduser
+        foreign key (card_user_id) references card_users (id)
+            on delete cascade,
+    constraint fk_split_transaction
+        foreign key (transaction_id) references transactions (id)
+            on delete cascade
+);
+
+create index idx_transaction_date
+    on transactions (transaction_date);
+
+create index idx_transaction_user_type
+    on transactions (user_id, type);
+
+create table user_profiles
+(
+    id                     bigint unsigned auto_increment
+        primary key,
+    user_id                bigint unsigned                                                 not null,
+    cpf                    varchar(14)                                                     null,
+    phone                  varchar(20)                                                     null,
+    birth_date             date                                                            null,
+    gender                 enum ('masculino', 'feminino', 'outro', 'prefiro_nao_informar') null,
+    zip_code               varchar(9)                                                      null,
+    address                varchar(255)                                                    null,
+    address_number         varchar(20)                                                     null,
+    neighborhood           varchar(100)                                                    null,
+    city                   varchar(100)                                                    null,
+    state                  char(2)                                                         null,
+    currency               varchar(3)               default 'BRL'                          not null,
+    timezone               varchar(50)              default 'America/Sao_Paulo'            not null,
+    theme                  enum ('claro', 'escuro') default 'claro'                        not null,
+    notify_invoice_due     tinyint(1)               default 1                              not null,
+    notify_budget_exceeded tinyint(1)               default 1                              not null,
+    bio                    varchar(255)                                                    null,
+    created_at             datetime                 default CURRENT_TIMESTAMP              not null,
+    updated_at             datetime                 default CURRENT_TIMESTAMP              not null on update CURRENT_TIMESTAMP,
+    deleted_at             datetime                                                        null,
+    constraint cpf
+        unique (cpf),
+    constraint user_id
+        unique (user_id),
+    constraint fk_profile_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
