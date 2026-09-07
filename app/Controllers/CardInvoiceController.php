@@ -28,23 +28,43 @@ class CardInvoiceController extends Controller
     {
         try {
             $userId = Auth::user()->id;
+
             $cards = CreditCard::findAllForUser($userId);
 
-            $selectedCardId = !empty($_GET["cartao"]) ? (int)$_GET["cartao"] : ($cards[0]->getId() ?? null);
+            $selectedCardId = !empty($_GET["cartao"])
+                ? (int)$_GET["cartao"]
+                : (($cards[0] ?? null)?->getId());
+
             $showAll = !empty($_GET["tudo"]);
 
-            $window = ["past" => [], "current" => null, "future" => []];
+            $window = [
+                "past" => [],
+                "current" => null,
+                "future" => []
+            ];
+
             $allInvoices = [];
 
             if ($selectedCardId) {
-                $card = CreditCard::findByIdForUser($selectedCardId, $userId);
+                $card = CreditCard::findByIdForUser(
+                    $selectedCardId,
+                    $userId
+                );
 
                 if ($card) {
                     if ($showAll) {
-                        $allInvoices = CardInvoice::findAllForCard($selectedCardId);
+                        $allInvoices = CardInvoice::findAllForCard(
+                            $selectedCardId
+                        );
                     } else {
-                        $window = CardInvoice::findWindowForCard($selectedCardId, 1, 2);
+                        $window = CardInvoice::findWindowForCard(
+                            $selectedCardId,
+                            1,
+                            2
+                        );
                     }
+                } else {
+                    $selectedCardId = null;
                 }
             }
 
@@ -57,11 +77,13 @@ class CardInvoiceController extends Controller
                 "showAll" => $showAll,
                 "selectedCardId" => $selectedCardId,
             ]);
+
         } catch (\Throwable $exception) {
             Logger::error("Falha ao listar faturas", [
                 "user_id" => Auth::user()->id ?? null,
                 "exception" => $exception->getMessage(),
             ]);
+
             Message::error("Não foi possível carregar as faturas.");
             redirect("/dashboard");
         }
