@@ -341,9 +341,7 @@ class Transaction extends AbstractModel
             $params["type"] = $type;
         }
         $sql .= " ORDER BY
-                    COALESCE(ci.due_date, ip.first_installment_date, t.transaction_date) ASC,
                     COALESCE(ip.first_installment_date, t.transaction_date) DESC,
-                    t.created_at DESC,
                     t.description ASC,
                     t.id DESC";
         $statement = $model->connection->prepare($sql);
