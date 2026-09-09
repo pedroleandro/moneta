@@ -67,6 +67,7 @@ class DashboardController extends Controller
             $owedToMe = TransactionSplit::getOwedToUserForMonth($userId, $selectedMonth, $selectedPersonId);
 
             $chartData = Transaction::getMonthlyChartData($userId, 12);
+            $yearlyExpenseChartData = Transaction::getCurrentYearExpenseChartData($userId);
             $topCategories = Transaction::getTopCategories($userId, $selectedMonth, 5);
             $recentTransactions = Transaction::findRecentForUser($userId, 6);
             $upcomingInvoices = CardInvoice::findUpcomingForUser($userId, 5);
@@ -79,6 +80,7 @@ class DashboardController extends Controller
                 "monthExpense" => $monthExpense,
                 "owedToMe" => $owedToMe,
                 "chartData" => $chartData,
+                "yearlyExpenseChartData" => $yearlyExpenseChartData,
                 "topCategories" => $topCategories,
                 "recentTransactions" => $recentTransactions,
                 "upcomingInvoices" => $upcomingInvoices,
@@ -102,6 +104,7 @@ class DashboardController extends Controller
                 "monthExpense" => 0,
                 "owedToMe" => 0,
                 "chartData" => ["labels" => [], "income" => [], "expense" => []],
+                "yearlyExpenseChartData" => ["labels" => [], "expense" => []],
                 "topCategories" => [],
                 "recentTransactions" => [],
                 "upcomingInvoices" => [],

@@ -71,6 +71,18 @@
             </div>
         </div>
 
+        <!-- Gastos por mês (ano atual) -->
+        <div class="col-12 mb-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Despesas por Mês — <?= date('Y') ?></h5>
+                </div>
+                <div class="card-body">
+                    <div id="yearlyExpenseChart"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Evolução receita x despesa -->
         <div class="col-12 col-lg-8 mb-6">
             <div class="card h-100">
@@ -308,6 +320,43 @@
         };
 
         new ApexCharts(chartEl, options).render();
+
+        const yearlyChartEl = document.querySelector('#yearlyExpenseChart');
+        if (yearlyChartEl && typeof ApexCharts !== 'undefined') {
+            const yearlyData = <?= json_encode($yearlyExpenseChartData) ?>;
+
+            const yearlyOptions = {
+                series: [{name: 'Despesas', data: yearlyData.expense}],
+                chart: {
+                    type: 'bar',
+                    height: 300,
+                    toolbar: {show: false},
+                    fontFamily: 'inherit',
+                },
+                colors: ['#dc3545'],
+                plotOptions: {
+                    bar: {borderRadius: 4, columnWidth: '55%'}
+                },
+                dataLabels: {enabled: false},
+                xaxis: {categories: yearlyData.labels},
+                yaxis: {
+                    labels: {
+                        formatter: function (value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function (value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        }
+                    }
+                },
+            };
+
+            new ApexCharts(yearlyChartEl, yearlyOptions).render();
+        }
     });
 
     function updateDashboardFilters() {

@@ -461,9 +461,14 @@ class Transaction extends AbstractModel
     {
         $model = new static();
         $statement = $model->connection->prepare(
-            "SELECT COALESCE(SUM(t.amount), 0) AS total
+            "SELECT COALESCE(SUM(t.amount - COALESCE(splits.total, 0)), 0) AS total
          FROM transactions t
          LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
+         LEFT JOIN (
+             SELECT transaction_id, SUM(amount) AS total
+             FROM transaction_splits
+             GROUP BY transaction_id
+         ) splits ON splits.transaction_id = t.id
          WHERE t.user_id = :user_id AND t.type = :type AND t.status = 'confirmado'
            AND t.deleted_at IS NULL
            AND DATE_FORMAT(COALESCE(ci.due_date, t.transaction_date), '%Y-%m') = :year_month"
@@ -490,16 +495,38 @@ class Transaction extends AbstractModel
         return ["labels" => $labels, "income" => $income, "expense" => $expense];
     }
 
+    public static function getCurrentYearExpenseChartData(int $userId): array
+    {
+        $year = date('Y');
+        $labels = [];
+        $expense = [];
+
+        $monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+        for ($month = 1; $month <= 12; $month++) {
+            $yearMonth = sprintf('%s-%02d', $year, $month);
+            $labels[] = $monthNames[$month - 1];
+            $expense[] = static::getMonthlyTotal($userId, self::TYPE_EXPENSE, $yearMonth);
+        }
+
+        return ["labels" => $labels, "expense" => $expense];
+    }
+
     public static function getTopCategories(int $userId, string $yearMonth, int $limit = 5): array
     {
         $model = new static();
 
         $statement = $model->connection->prepare(
             "SELECT c.name AS category_name, c.color AS category_color, c.icon AS category_icon,
-                        SUM(t.amount) AS total
+                        SUM(t.amount - COALESCE(splits.total, 0)) AS total
                  FROM transactions t
                  INNER JOIN categories c ON c.id = t.category_id
                  LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
+                 LEFT JOIN (
+                     SELECT transaction_id, SUM(amount) AS total
+                     FROM transaction_splits
+                     GROUP BY transaction_id
+                 ) splits ON splits.transaction_id = t.id
                  WHERE t.user_id = :user_id AND t.type = 'despesa' AND t.status = 'confirmado'
                    AND DATE_FORMAT(COALESCE(ci.due_date, t.transaction_date), '%Y-%m') = :year_month
                    AND t.deleted_at IS NULL
