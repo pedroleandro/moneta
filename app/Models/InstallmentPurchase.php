@@ -240,7 +240,7 @@ class InstallmentPurchase extends AbstractModel
          INNER JOIN card_invoices ci ON ci.id = t.card_invoice_id
          WHERE t.installment_purchase_id = :id
            AND t.deleted_at IS NULL
-           AND ci.status = 'paga'"
+           AND ci.status IN ('paga', 'fechada')"
         );
         $statement->execute(["id" => $this->getId()]);
 

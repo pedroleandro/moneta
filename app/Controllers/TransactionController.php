@@ -491,6 +491,16 @@ class TransactionController extends Controller
                 return;
             }
 
+            if ($transaction->getCardInvoiceId()) {
+                $invoiceStatus = CardInvoice::find($transaction->getCardInvoiceId())?->getStatus();
+
+                if (in_array($invoiceStatus, [CardInvoice::STATUS_CLOSED, CardInvoice::STATUS_PAID], true)) {
+                    Message::error("Esse lançamento está numa fatura já fechada ou paga. Não é possível excluí-lo.");
+                    redirect("/lancamentos");
+                    return;
+                }
+            }
+
             $connection->beginTransaction();
 
             try {
