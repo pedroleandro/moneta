@@ -140,11 +140,21 @@ class CardInvoice extends AbstractModel
 
         $total = (float)$statement->fetch()->total;
 
+        $paidAmount = $this->getPaidAmount();
+
+        if ($total < $paidAmount - 0.001) {
+            throw new \InvalidArgumentException(
+                "Não é possível reduzir essa fatura para R$ " . number_format($total, 2, ',', '.') .
+                ", porque já foram pagos R$ " . number_format($paidAmount, 2, ',', '.') .
+                " nela. Ajuste ou exclua o pagamento antes de mexer nesse lançamento."
+            );
+        }
+
         $this->totalAmount = $total;
         $this->attributes["total_amount"] = $total;
 
         if ($this->status === self::STATUS_PAID) {
-            $remaining = max(0, $total - $this->getPaidAmount());
+            $remaining = max(0, $total - $paidAmount);
 
             if ($remaining > 0.001) {
                 $this->status = (date('Y-m-d') >= $this->closingDate)
