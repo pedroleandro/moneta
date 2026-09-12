@@ -44,17 +44,29 @@
                             <?= date('d/m/Y', strtotime($purchase->getFirstInstallmentDate())) ?>
                         </td>
                         <td data-label="Ações" class="text-end">
-                            <a href="<?= url('/parcelamentos/' . $purchase->getId() . '/editar') ?>"
-                               class="btn btn-icon btn-outline-secondary btn-icon-soft-primary me-1" title="Editar">
-                                <i class="icon-base bx bx-edit"></i>
-                            </a>
-                            <button type="button" class="btn btn-icon btn-outline-danger btn-icon-soft-danger"
-                                    title="Cancelar"
-                                    data-bs-toggle="modal" data-bs-target="#modal-cancelar-parcelamento"
-                                    data-action="<?= url('/parcelamentos/' . $purchase->getId() . '/excluir') ?>"
-                                    data-name="<?= htmlspecialchars($purchase->getDescription()) ?>">
-                                <i class="icon-base bx bx-trash"></i>
-                            </button>
+                            <?php $isLocked = $purchase->hasAnyInstallmentInPaidInvoice(); ?>
+                            <?php if ($isLocked): ?>
+                                <button type="button" class="btn btn-icon btn-outline-secondary me-1" disabled
+                                        title="Uma parcela já está em fatura fechada/paga">
+                                    <i class="icon-base bx bx-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-icon btn-outline-secondary" disabled
+                                        title="Uma parcela já está em fatura fechada/paga">
+                                    <i class="icon-base bx bx-trash"></i>
+                                </button>
+                            <?php else: ?>
+                                <a href="<?= url('/parcelamentos/' . $purchase->getId() . '/editar') ?>"
+                                   class="btn btn-icon btn-outline-secondary btn-icon-soft-primary me-1" title="Editar">
+                                    <i class="icon-base bx bx-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-icon btn-outline-danger btn-icon-soft-danger"
+                                        title="Cancelar"
+                                        data-bs-toggle="modal" data-bs-target="#modal-cancelar-parcelamento"
+                                        data-action="<?= url('/parcelamentos/' . $purchase->getId() . '/excluir') ?>"
+                                        data-name="<?= htmlspecialchars($purchase->getDescription()) ?>">
+                                    <i class="icon-base bx bx-trash"></i>
+                                </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

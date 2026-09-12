@@ -326,6 +326,7 @@ class Transaction extends AbstractModel
                    ba.name AS bank_account_name, cc.name AS credit_card_name,
                    ip.first_installment_date AS purchase_date,
                    ci.due_date AS invoice_due_date,
+                   ci.status AS invoice_status,
                    at.from_account_id AS transfer_from_account_id
             FROM transactions t
             LEFT JOIN categories c ON c.id = t.category_id
@@ -355,13 +356,16 @@ class Transaction extends AbstractModel
                 "credit_card_name" => $row["credit_card_name"],
                 "purchase_date" => $row["purchase_date"],
                 "invoice_due_date" => $row["invoice_due_date"],
+                "invoice_status" => $row["invoice_status"],
                 "transfer_from_account_id" => $row["transfer_from_account_id"],
             ];
+
             unset(
                 $row["category_name"], $row["category_color"],
                 $row["bank_account_name"], $row["credit_card_name"],
-                $row["purchase_date"], $row["invoice_due_date"], $row["transfer_from_account_id"]
+                $row["purchase_date"], $row["invoice_due_date"], $row["invoice_status"], $row["transfer_from_account_id"]
             );
+
             $instance = static::hydrate($row);
             $instance->categoryName = $extra["category_name"];
             $instance->categoryColor = $extra["category_color"];
@@ -369,6 +373,7 @@ class Transaction extends AbstractModel
             $instance->creditCardName = $extra["credit_card_name"];
             $instance->purchaseDate = $extra["purchase_date"];
             $instance->invoiceDueDate = $extra["invoice_due_date"];
+            $instance->invoiceStatus = $extra["invoice_status"];
             $instance->transferFromAccountId = $extra["transfer_from_account_id"];
             $results[] = $instance;
         }
@@ -383,6 +388,8 @@ class Transaction extends AbstractModel
     private ?string $purchaseDate = null;
 
     private ?string $invoiceDueDate = null;
+
+    private ?string $invoiceStatus = null;
 
     public function getCategoryName(): ?string
     {
@@ -412,6 +419,11 @@ class Transaction extends AbstractModel
     public function getInvoiceDueDate(): ?string
     {
         return $this->invoiceDueDate;
+    }
+
+    public function getInvoiceStatus(): ?string
+    {
+        return $this->invoiceStatus;
     }
 
     public static function findByIdForUser(int $id, int $userId): ?self

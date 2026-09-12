@@ -83,19 +83,38 @@
                             <?php endif; ?>
                         </td>
                         <td data-label="Ações" class="text-end">
+                            <?php
+                            $isLocked = $transaction->getCreditCardId()
+                                    && in_array($transaction->getInvoiceStatus(), ['fechada', 'paga'], true);
+                            ?>
                             <?php if ($transaction->getType() !== 'transferencia'): ?>
-                                <a href="<?= url('/lancamentos/' . $transaction->getId() . '/editar') ?>"
-                                   class="btn btn-icon btn-outline-secondary btn-icon-soft-primary me-1" title="Editar">
-                                    <i class="icon-base bx bx-edit"></i>
-                                </a>
+                                <?php if ($isLocked): ?>
+                                    <button type="button" class="btn btn-icon btn-outline-secondary me-1" disabled
+                                            title="Fatura já fechada — não é possível editar">
+                                        <i class="icon-base bx bx-edit"></i>
+                                    </button>
+                                <?php else: ?>
+                                    <a href="<?= url('/lancamentos/' . $transaction->getId() . '/editar') ?>"
+                                       class="btn btn-icon btn-outline-secondary btn-icon-soft-primary me-1" title="Editar">
+                                        <i class="icon-base bx bx-edit"></i>
+                                    </a>
+                                <?php endif; ?>
                             <?php endif; ?>
-                            <button type="button" class="btn btn-icon btn-outline-danger btn-icon-soft-danger"
-                                    title="Excluir"
-                                    data-bs-toggle="modal" data-bs-target="#modal-excluir-lancamento"
-                                    data-action="<?= url('/lancamentos/' . $transaction->getId() . '/excluir') ?>"
-                                    data-name="&quot;<?= htmlspecialchars($transaction->getDescription()) ?>&quot;">
-                                <i class="icon-base bx bx-trash"></i>
-                            </button>
+
+                            <?php if ($isLocked): ?>
+                                <button type="button" class="btn btn-icon btn-outline-secondary" disabled
+                                        title="Fatura já fechada — não é possível excluir">
+                                    <i class="icon-base bx bx-trash"></i>
+                                </button>
+                            <?php else: ?>
+                                <button type="button" class="btn btn-icon btn-outline-danger btn-icon-soft-danger"
+                                        title="Excluir"
+                                        data-bs-toggle="modal" data-bs-target="#modal-excluir-lancamento"
+                                        data-action="<?= url('/lancamentos/' . $transaction->getId() . '/excluir') ?>"
+                                        data-name="&quot;<?= htmlspecialchars($transaction->getDescription()) ?>&quot;">
+                                    <i class="icon-base bx bx-trash"></i>
+                                </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
