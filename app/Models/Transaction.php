@@ -464,6 +464,7 @@ class Transaction extends AbstractModel
             "SELECT COALESCE(SUM(t.amount - COALESCE(splits.total, 0)), 0) AS total
          FROM transactions t
          LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
+         LEFT JOIN card_invoice_payments cip ON cip.transaction_id = t.id
          LEFT JOIN (
              SELECT transaction_id, SUM(amount) AS total
              FROM transaction_splits
@@ -471,6 +472,7 @@ class Transaction extends AbstractModel
          ) splits ON splits.transaction_id = t.id
          WHERE t.user_id = :user_id AND t.type = :type AND t.status = 'confirmado'
            AND t.deleted_at IS NULL
+           AND cip.id IS NULL
            AND DATE_FORMAT(COALESCE(ci.due_date, t.transaction_date), '%Y-%m') = :year_month"
         );
         $statement->execute(["user_id" => $userId, "type" => $type, "year_month" => $yearMonth]);
