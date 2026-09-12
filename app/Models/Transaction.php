@@ -319,35 +319,76 @@ class Transaction extends AbstractModel
         }
     }
 
-    public static function findAllForUser(int $userId, ?string $type = null): array
+    public static function findAllForUser(int $userId, ?string $type = null, array $filters = []): array
     {
         $model = new static();
         $sql = "SELECT t.*, c.name AS category_name, c.color AS category_color,
-                   ba.name AS bank_account_name, cc.name AS credit_card_name,
-                   ip.first_installment_date AS purchase_date,
-                   ci.due_date AS invoice_due_date,
-                   ci.status AS invoice_status,
-                   at.from_account_id AS transfer_from_account_id
-            FROM transactions t
-            LEFT JOIN categories c ON c.id = t.category_id
-            LEFT JOIN bank_accounts ba ON ba.id = t.bank_account_id
-            LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
-            LEFT JOIN installment_purchases ip ON ip.id = t.installment_purchase_id
-            LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
-            LEFT JOIN account_transfers at ON at.id = t.transfer_id
-            WHERE t.user_id = :user_id AND t.deleted_at IS NULL";
+               ba.name AS bank_account_name, cc.name AS credit_card_name,
+               ip.first_installment_date AS purchase_date,
+               ci.due_date AS invoice_due_date,
+               ci.status AS invoice_status,
+               at.from_account_id AS transfer_from_account_id
+        FROM transactions t
+        LEFT JOIN categories c ON c.id = t.category_id
+        LEFT JOIN bank_accounts ba ON ba.id = t.bank_account_id
+        LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
+        LEFT JOIN installment_purchases ip ON ip.id = t.installment_purchase_id
+        LEFT JOIN card_invoices ci ON ci.id = t.card_invoice_id
+        LEFT JOIN account_transfers at ON at.id = t.transfer_id
+        WHERE t.user_id = :user_id AND t.deleted_at IS NULL";
+
         $params = ["user_id" => $userId];
+
         if ($type) {
             $sql .= " AND t.type = :type";
             $params["type"] = $type;
         }
-        $sql .= " ORDER BY
-                    COALESCE(ip.first_installment_date, t.transaction_date) DESC,
-                    t.description ASC,
-                    t.id DESC";
+
+        if (!empty($filters["categoria_id"])) {
+            $sql .= " AND t.category_id = :categoria_id";
+            $params["categoria_id"] = (int)$filters["categoria_id"];
+        }
+
+        if (!empty($filters["status"]) && in_array($filters["status"], [self::STATUS_PENDING, self::STATUS_CONFIRMED], true)) {
+            $sql .= " AND t.status = :status";
+            $params["status"] = $filters["status"];
+        }
+
+        if (!empty($filters["pagamento"]) && preg_match('/^(conta|cartao):(\d+)$/', $filters["pagamento"], $matches)) {
+            $id = (int)$matches[2];
+            if ($matches[1] === "conta") {
+                $sql .= " AND t.bank_account_id = :pagamento_id";
+            } else {
+                $sql .= " AND t.credit_card_id = :pagamento_id";
+            }
+            $params["pagamento_id"] = $id;
+        }
+
+        if (!empty($filters["pessoa_id"])) {
+            $sql .= " AND EXISTS (
+            SELECT 1 FROM transaction_splits ts
+            WHERE ts.transaction_id = t.id AND ts.card_user_id = :pessoa_id
+        )";
+            $params["pessoa_id"] = (int)$filters["pessoa_id"];
+        }
+
+        if (!empty($filters["data_inicio"])) {
+            $sql .= " AND COALESCE(ip.first_installment_date, t.transaction_date) >= :data_inicio";
+            $params["data_inicio"] = $filters["data_inicio"];
+        }
+
+        if (!empty($filters["data_fim"])) {
+            $sql .= " AND COALESCE(ip.first_installment_date, t.transaction_date) <= :data_fim";
+            $params["data_fim"] = $filters["data_fim"];
+        }
+
+        $sql .= " ORDER BY t.created_at DESC, t.id DESC";
+
         $statement = $model->connection->prepare($sql);
         $statement->execute($params);
+
         $results = [];
+
         foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
             $extra = [
                 "category_name" => $row["category_name"],
@@ -377,6 +418,7 @@ class Transaction extends AbstractModel
             $instance->transferFromAccountId = $extra["transfer_from_account_id"];
             $results[] = $instance;
         }
+
         return $results;
     }
 

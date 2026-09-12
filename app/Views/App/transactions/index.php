@@ -20,6 +20,109 @@
 
     <?= \App\Core\Message::render() ?>
 
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center"
+             role="button" data-bs-toggle="collapse" data-bs-target="#filtrosLancamentos"
+             aria-expanded="<?= !empty($filters) ? 'true' : 'false' ?>" aria-controls="filtrosLancamentos">
+            <h6 class="mb-0"><i class="icon-base bx bx-filter-alt me-1"></i> Filtros</h6>
+            <i class="icon-base bx bx-chevron-down"></i>
+        </div>
+        <div class="collapse <?= !empty($filters) ? 'show' : '' ?>" id="filtrosLancamentos">
+            <div class="card-body">
+                <form method="get" action="<?= url('/lancamentos') ?>">
+                    <?php if ($filterType): ?>
+                        <input type="hidden" name="tipo" value="<?= htmlspecialchars($filterType) ?>">
+                    <?php endif; ?>
+
+                    <div class="row g-3">
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label" for="data_inicio">De</label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio"
+                                   value="<?= htmlspecialchars($filters['data_inicio'] ?? '') ?>">
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label" for="data_fim">Até</label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim"
+                                   value="<?= htmlspecialchars($filters['data_fim'] ?? '') ?>">
+                        </div>
+                        <div class="col-12 col-md-4 col-lg-3">
+                            <label class="form-label" for="categoria_id">Categoria</label>
+                            <select class="form-select" id="categoria_id" name="categoria_id">
+                                <option value="">Todas</option>
+                                <?php foreach ($categories as $category): ?>
+                                    <option value="<?= $category->getId() ?>"
+                                            <?= (int)($filters['categoria_id'] ?? 0) === $category->getId() ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($category->getName()) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label" for="pagamento">Conta/Cartão</label>
+                            <select class="form-select" id="pagamento" name="pagamento">
+                                <option value="">Todas</option>
+                                <?php if (!empty($accounts)): ?>
+                                    <optgroup label="Contas">
+                                        <?php foreach ($accounts as $account): ?>
+                                            <option value="conta:<?= $account->getId() ?>"
+                                                    <?= ($filters['pagamento'] ?? '') === 'conta:' . $account->getId() ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($account->getName()) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </optgroup>
+                                <?php endif; ?>
+                                <?php if (!empty($cards)): ?>
+                                    <optgroup label="Cartões">
+                                        <?php foreach ($cards as $card): ?>
+                                            <option value="cartao:<?= $card->getId() ?>"
+                                                    <?= ($filters['pagamento'] ?? '') === 'cartao:' . $card->getId() ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($card->getName()) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </optgroup>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label" for="status">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Todos</option>
+                                <option value="confirmado" <?= ($filters['status'] ?? '') === 'confirmado' ? 'selected' : '' ?>>Confirmado</option>
+                                <option value="pendente" <?= ($filters['status'] ?? '') === 'pendente' ? 'selected' : '' ?>>Pendente</option>
+                            </select>
+                        </div>
+                        <?php if (!empty($cardUsers)): ?>
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <label class="form-label" for="pessoa_id">Pessoa</label>
+                                <select class="form-select" id="pessoa_id" name="pessoa_id">
+                                    <option value="">Todas</option>
+                                    <?php foreach ($cardUsers as $cardUser): ?>
+                                        <option value="<?= $cardUser->getId() ?>"
+                                                <?= (int)($filters['pessoa_id'] ?? 0) === $cardUser->getId() ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($cardUser->getName()) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="icon-base bx bx-filter-alt me-1"></i> Filtrar
+                        </button>
+                        <?php if (!empty($filters)): ?>
+                            <a href="<?= url('/lancamentos') . ($filterType ? '?tipo=' . $filterType : '') ?>"
+                               class="btn btn-outline-secondary">
+                                Limpar filtros
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="table-responsive table-responsive-mobile text-nowrap">
             <table class="table table-datatable">

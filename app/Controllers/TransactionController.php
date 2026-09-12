@@ -35,7 +35,9 @@ class TransactionController extends Controller
                 $type = null;
             }
 
-            $transactions = Transaction::findAllForUser($userId, $type);
+            $filters = $this->buildIndexFilters($_GET);
+
+            $transactions = Transaction::findAllForUser($userId, $type, $filters);
 
             $activeSlug = match ($type) {
                 Transaction::TYPE_INCOME => "lancamentos-receitas",
@@ -48,6 +50,11 @@ class TransactionController extends Controller
                 "active" => $activeSlug,
                 "transactions" => $transactions,
                 "filterType" => $type,
+                "filters" => $filters,
+                "categories" => Category::findAllForUser($userId),
+                "accounts" => BankAccount::findAllForUser($userId),
+                "cards" => CreditCard::findAllForUser($userId),
+                "cardUsers" => CardUser::findAllForUser($userId),
             ]);
         } catch (\Throwable $exception) {
             Logger::error("Falha ao listar lançamentos", [
@@ -724,5 +731,36 @@ class TransactionController extends Controller
         }
 
         return true;
+    }
+
+    private function buildIndexFilters(array $get): array
+    {
+        $filters = [];
+
+        if (!empty($get["categoria_id"])) {
+            $filters["categoria_id"] = (int)$get["categoria_id"];
+        }
+
+        if (!empty($get["status"]) && in_array($get["status"], [Transaction::STATUS_PENDING, Transaction::STATUS_CONFIRMED], true)) {
+            $filters["status"] = $get["status"];
+        }
+
+        if (!empty($get["pagamento"]) && preg_match('/^(conta|cartao):\d+$/', $get["pagamento"])) {
+            $filters["pagamento"] = $get["pagamento"];
+        }
+
+        if (!empty($get["pessoa_id"])) {
+            $filters["pessoa_id"] = (int)$get["pessoa_id"];
+        }
+
+        if (!empty($get["data_inicio"]) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $get["data_inicio"])) {
+            $filters["data_inicio"] = $get["data_inicio"];
+        }
+
+        if (!empty($get["data_fim"]) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $get["data_fim"])) {
+            $filters["data_fim"] = $get["data_fim"];
+        }
+
+        return $filters;
     }
 }
