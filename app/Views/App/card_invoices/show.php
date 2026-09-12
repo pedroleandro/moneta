@@ -16,6 +16,16 @@
 
     <?= \App\Core\Message::render() ?>
 
+    <?php if ($previousUnpaidBalance > 0.001): ?>
+        <div class="alert alert-warning d-flex align-items-center gap-2 mb-6">
+            <i class="icon-base bx bx-error-circle icon-lg"></i>
+            <div>
+                Além do valor dessa fatura, ainda ficou <strong>R$ <?= number_format($previousUnpaidBalance, 2, ',', '.') ?></strong>
+                sem pagar na fatura anterior. Esse valor não entra no total acima nem nos relatórios — é só um aviso.
+            </div>
+        </div>
+    <?php endif; ?>
+
     <div class="row mb-6">
         <div class="col-6 col-md-3 mb-4 mb-md-0">
             <div class="card">

@@ -178,10 +178,11 @@ class InstallmentPurchaseController extends Controller
 
             $firstReferenceMonth = $card->getReferenceMonthForPurchase($purchaseDate);
             $firstInvoice = $card->resolveInvoiceForReferenceMonth($firstReferenceMonth);
+            $firstInvoice->closeIfDue();
 
-            if ($firstInvoice->getStatus() === \App\Models\CardInvoice::STATUS_PAID) {
+            if ($firstInvoice->getStatus() === \App\Models\CardInvoice::STATUS_CLOSED) {
                 flash_old($data);
-                Message::error("Essa data cai numa fatura que já foi paga. Escolha uma data mais recente.");
+                Message::error("Essa data cai numa fatura que já fechou. Escolha uma data mais recente.");
                 redirect("/parcelamentos/novo");
                 return;
             }

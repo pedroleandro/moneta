@@ -133,8 +133,8 @@ class CardInvoice extends AbstractModel
     {
         $statement = $this->connection->prepare(
             "SELECT COALESCE(SUM(amount), 0) AS total
-             FROM transactions
-             WHERE card_invoice_id = :id AND deleted_at IS NULL"
+         FROM transactions
+         WHERE card_invoice_id = :id AND deleted_at IS NULL"
         );
         $statement->execute(["id" => $this->getId()]);
 
@@ -142,9 +142,47 @@ class CardInvoice extends AbstractModel
 
         $this->totalAmount = $total;
         $this->attributes["total_amount"] = $total;
+
+        if ($this->status === self::STATUS_PAID) {
+            $remaining = max(0, $total - $this->getPaidAmount());
+
+            if ($remaining > 0.001) {
+                $this->status = (date('Y-m-d') >= $this->closingDate)
+                    ? self::STATUS_CLOSED
+                    : self::STATUS_OPEN;
+                $this->attributes["status"] = $this->status;
+            }
+        }
+
         $this->save();
 
         return $total;
+    }
+
+    public function closeIfDue(): void
+    {
+        if ($this->status !== self::STATUS_OPEN) {
+            return;
+        }
+
+        if (date('Y-m-d') >= $this->closingDate) {
+            $this->setStatus(self::STATUS_CLOSED);
+            $this->save();
+        }
+    }
+
+    public function getPreviousUnpaidBalance(): float
+    {
+        $previous = $this->getPreviousInvoice();
+
+        return ($previous && $previous->isOverdue()) ? $previous->getRemainingAmount() : 0.0;
+    }
+
+    public function isOverdue(): bool
+    {
+        return $this->status === self::STATUS_CLOSED
+            && $this->dueDate < date('Y-m-d')
+            && $this->getRemainingAmount() > 0.001;
     }
 
     public static function findByCardAndMonth(int $creditCardId, string $referenceMonth): ?self

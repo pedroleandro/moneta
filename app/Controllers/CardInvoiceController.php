@@ -103,6 +103,9 @@ class CardInvoiceController extends Controller
                 return;
             }
 
+            $invoice->closeIfDue();
+            $previousUnpaidBalance = $invoice->getPreviousUnpaidBalance();
+
             $card = CreditCard::find($invoice->getCreditCardId());
             $transactions = Transaction::findAllForInvoice($id);
 
@@ -137,6 +140,7 @@ class CardInvoiceController extends Controller
                 "cardUsers" => $cardUsers,
                 "paidAmount" => $paidAmount,
                 "remainingAmount" => $remainingAmount,
+                "previousUnpaidBalance" => $previousUnpaidBalance,
             ]);
 
         } catch (\Throwable $exception) {
@@ -188,6 +192,12 @@ class CardInvoiceController extends Controller
             $dateCheck = \DateTime::createFromFormat("Y-m-d", $paymentDate);
             if (!$dateCheck) {
                 Message::error("Data de pagamento inválida.");
+                redirect("/faturas/{$id}");
+                return;
+            }
+
+            if ($paymentDate > date("Y-m-d")) {
+                Message::error("A data do pagamento não pode ser no futuro.");
                 redirect("/faturas/{$id}");
                 return;
             }

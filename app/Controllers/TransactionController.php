@@ -167,11 +167,12 @@ class TransactionController extends Controller
 
                 if ($creditCard) {
                     $invoice = $creditCard->resolveInvoiceForDate($transaction->getTransactionDate());
+                    $invoice->closeIfDue();
 
-                    if ($invoice->getStatus() === \App\Models\CardInvoice::STATUS_PAID) {
+                    if ($invoice->getStatus() === \App\Models\CardInvoice::STATUS_CLOSED) {
                         $connection->rollBack();
                         flash_old($data);
-                        Message::error("Essa data cai numa fatura que já foi paga. Não é possível adicionar lançamento nela.");
+                        Message::error("Essa fatura já fechou. Não é possível adicionar lançamento nela.");
                         redirect("/lancamentos/novo");
                         return;
                     }
@@ -382,11 +383,12 @@ class TransactionController extends Controller
                 if ($creditCard) {
                     if (!$transaction->getInstallmentPurchaseId()) {
                         $invoice = $creditCard->resolveInvoiceForDate($transaction->getTransactionDate());
+                        $invoice->closeIfDue();
 
-                        if ($invoice->getStatus() === \App\Models\CardInvoice::STATUS_PAID) {
+                        if ($invoice->getStatus() === \App\Models\CardInvoice::STATUS_CLOSED) {
                             $connection->rollBack();
                             flash_old($data);
-                            Message::error("Essa data cai numa fatura que já foi paga. Não é possível atualizar lançamento nela.");
+                            Message::error("Essa fatura já fechou. Não é possível atualizar lançamento nela.");
                             redirect("/lancamentos/{$id}/editar");
                             return;
                         }
