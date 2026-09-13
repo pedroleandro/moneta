@@ -493,7 +493,7 @@ class Transaction extends AbstractModel
              FROM transactions t
              LEFT JOIN categories c ON c.id = t.category_id
              WHERE t.card_invoice_id = :invoice_id AND t.deleted_at IS NULL
-             ORDER BY t.transaction_date ASC"
+             ORDER BY t.created_at DESC, t.id DESC"
         );
         $statement->execute(["invoice_id" => $invoiceId]);
 
