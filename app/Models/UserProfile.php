@@ -88,6 +88,14 @@ class UserProfile extends AbstractModel
             throw new \InvalidArgumentException("O CPF deve conter 11 dígitos.");
         }
 
+        if (preg_match('/^(\d)\1{10}$/', $digits)) {
+            throw new \InvalidArgumentException("CPF inválido.");
+        }
+
+        if (!$this->isValidCpfChecksum($digits)) {
+            throw new \InvalidArgumentException("CPF inválido.");
+        }
+
         $formatted = substr($digits, 0, 3) . "." . substr($digits, 3, 3) . "." .
             substr($digits, 6, 3) . "-" . substr($digits, 9, 2);
 
@@ -98,6 +106,28 @@ class UserProfile extends AbstractModel
     public function getCpf(): ?string
     {
         return $this->cpf;
+    }
+
+    private function isValidCpfChecksum(string $digits): bool
+    {
+        for ($pos = 9; $pos <= 10; $pos++) {
+            $sum = 0;
+            $weight = $pos + 1;
+
+            for ($i = 0; $i < $pos; $i++) {
+                $sum += (int)$digits[$i] * $weight;
+                $weight--;
+            }
+
+            $remainder = $sum % 11;
+            $expectedDigit = $remainder < 2 ? 0 : 11 - $remainder;
+
+            if ($expectedDigit !== (int)$digits[$pos]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function setPhone(?string $phone): void
