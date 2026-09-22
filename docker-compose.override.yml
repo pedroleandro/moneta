@@ -23,3 +23,20 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
+
+  cron:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_ENV: local
+    container_name: moneta_cron
+    volumes:
+      - .:/var/www/html/moneta
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "echo '0 1 * * * php /var/www/html/moneta/bin/run-recurrences.php >> /var/www/html/moneta/storage/logs/cron.log 2>&1' | crontab -
+      && cron -f"
+    restart: unless-stopped
