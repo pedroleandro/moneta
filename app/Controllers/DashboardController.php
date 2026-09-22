@@ -25,6 +25,28 @@ class DashboardController extends Controller
         try {
             $userId = Auth::user()->id;
 
+            $notices = \App\Models\UserNotice::findPendingForUser($userId);
+
+            foreach ($notices as $notice) {
+                $items = $notice->getPayload();
+                $count = count($items);
+
+                $negativeAccounts = array_filter($items, fn($i) => $i["account_went_negative"]);
+
+                $text = "{$count} lançamento(s) de recorrência foram confirmados automaticamente enquanto você estava fora.";
+
+                if ($negativeAccounts) {
+                    $names = implode(', ', array_unique(array_column($negativeAccounts, 'account_name')));
+                    $text .= " Atenção: a(s) conta(s) {$names} ficaram com saldo negativo.";
+                }
+
+                \App\Core\Message::warning($text, "Recorrências confirmadas:");
+
+                $notice->dismiss();
+            }
+
+
+
             $currentMonth = date('Y-m');
             $firstMonth = Transaction::getFirstMonthForUser($userId);
             $lastMonth = Transaction::getLastMonthForUser($userId);
