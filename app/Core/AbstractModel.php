@@ -499,7 +499,7 @@ abstract class AbstractModel
         }
     }
 
-    protected static function hydrate(array $data): static
+    public static function hydrate(array $data): static
     {
         $instance = new static();
         $instance->attributes = $data;
