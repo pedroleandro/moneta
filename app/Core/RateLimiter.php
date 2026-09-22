@@ -13,9 +13,8 @@ class RateLimiter
     {
         if (self::$redis === null) {
             self::$redis = new \Redis();
-            self::$redis->connect(REDIS_HOST, REDIS_PORT);
+            @self::$redis->connect(REDIS_HOST, REDIS_PORT);
         }
-
         return self::$redis;
     }
 
