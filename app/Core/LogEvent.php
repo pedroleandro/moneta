@@ -53,6 +53,11 @@ final class LogEvent
     public const TRANSACTION_UPDATED = "transaction_updated";
     public const TRANSACTION_DELETED = "transaction_deleted";
 
+    // Recorrências
+    public const RECURRENCE_CREATED = "recurrence_created";
+    public const RECURRENCE_UPDATED = "recurrence_updated";
+    public const RECURRENCE_DELETED = "recurrence_deleted";
+
     // Transferências entre Contas
     public const TRANSFER_CREATED = "transfer_created";
     public const TRANSFER_DELETED = "transfer_deleted";
@@ -117,6 +122,11 @@ final class LogEvent
             self::TRANSACTION_CREATED => "Lançamento criado",
             self::TRANSACTION_UPDATED => "Lançamento atualizado",
             self::TRANSACTION_DELETED => "Lançamento excluído",
+
+            // Recorrências
+            self::RECURRENCE_CREATED => "Recorrência criada",
+            self::RECURRENCE_UPDATED => "Recorrência atualizada",
+            self::RECURRENCE_DELETED => "Recorrência excluída",
 
             // Transferências
             self::TRANSFER_CREATED => "Transferência realizada",
