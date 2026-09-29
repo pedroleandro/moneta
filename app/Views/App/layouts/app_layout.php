@@ -183,6 +183,26 @@
                     </a>
                 </li>
 
+                <!-- Fiado (com submenu) -->
+                <li class="menu-item <?= in_array($active ?? '', ['emprestimos', 'fiado'], true) ? 'active open' : '' ?>">
+                    <a href="" class="menu-link menu-toggle">
+                        <i class="menu-icon tf-icons bx bx-money"></i>
+                        <div class="text-truncate">Fiado</div>
+                    </a>
+                    <ul class="menu-sub">
+                        <li class="menu-item <?= ($active ?? '') === 'emprestimos' ? 'active' : '' ?>">
+                            <a href="<?= url('/emprestimos') ?>" class="menu-link">
+                                <div class="text-truncate">Empréstimos</div>
+                            </a>
+                        </li>
+                        <li class="menu-item <?= ($active ?? '') === 'fiado' ? 'active' : '' ?>">
+                            <a href="<?= url('/fiado') ?>" class="menu-link">
+                                <div class="text-truncate">Dívidas</div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 <li class="menu-header small text-uppercase">
                     <span class="menu-header-text">Análises</span>
                 </li>
