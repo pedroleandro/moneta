@@ -72,6 +72,20 @@ final class LogEvent
     public const INSTALLMENT_PURCHASE_UPDATED = "installment_purchase_updated";
     public const INSTALLMENT_PURCHASE_CANCELED = "installment_purchase_canceled";
 
+    // Empréstimos (Fiado — eu empresto)
+    public const LOAN_CREATED = "loan_created";
+    public const LOAN_UPDATED = "loan_updated";
+    public const LOAN_DELETED = "loan_deleted";
+    public const LOAN_PAYMENT_CREATED = "loan_payment_created";
+    public const LOAN_PAYMENT_DELETED = "loan_payment_deleted";
+
+    // Dívidas (Fiado — eu devo)
+    public const DEBT_CREATED = "debt_created";
+    public const DEBT_UPDATED = "debt_updated";
+    public const DEBT_DELETED = "debt_deleted";
+    public const DEBT_PAYMENT_CREATED = "debt_payment_created";
+    public const DEBT_PAYMENT_DELETED = "debt_payment_deleted";
+
     public static function label(string $event): string
     {
         return match ($event) {
@@ -141,6 +155,20 @@ final class LogEvent
             self::INSTALLMENT_PURCHASE_CREATED => "Compra parcelada criada",
             self::INSTALLMENT_PURCHASE_UPDATED => "Compra parcelada editada",
             self::INSTALLMENT_PURCHASE_CANCELED => "Compra parcelada cancelada",
+
+            // Empréstimos
+            self::LOAN_CREATED => "Empréstimo registrado",
+            self::LOAN_UPDATED => "Empréstimo atualizado",
+            self::LOAN_DELETED => "Empréstimo excluído",
+            self::LOAN_PAYMENT_CREATED => "Devolução de empréstimo registrada",
+            self::LOAN_PAYMENT_DELETED => "Devolução de empréstimo excluída",
+
+            // Dívidas
+            self::DEBT_CREATED => "Dívida registrada",
+            self::DEBT_UPDATED => "Dívida atualizada",
+            self::DEBT_DELETED => "Dívida excluída",
+            self::DEBT_PAYMENT_CREATED => "Pagamento de dívida registrado",
+            self::DEBT_PAYMENT_DELETED => "Pagamento de dívida excluído",
 
             default => $event,
         };
