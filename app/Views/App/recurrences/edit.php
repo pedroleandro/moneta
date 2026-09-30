@@ -124,8 +124,86 @@ $isCardSelected = old('payment_method', $recurrence->isCardRecurrence() ? 'card'
 
                 <div class="mb-6 form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1"
-                        <?= $recurrence->isActive() ? 'checked' : '' ?>/>
+                            <?= $recurrence->isActive() ? 'checked' : '' ?>/>
                     <label class="form-check-label" for="is_active">Recorrência ativa</label>
+                </div>
+
+                <div id="splits-section">
+                    <hr class="my-6"/>
+                    <label class="form-label d-block mb-3">
+                        Dividir com pessoas <small class="text-body-secondary">(opcional)</small>
+                        <small class="text-body-secondary d-block">Alterar aqui só afeta as PRÓXIMAS ocorrências.</small>
+                    </label>
+
+                    <?php
+                    $oldSplitPersonIds = old('split_card_user_id', null);
+                    $oldSplitAmounts = old('split_amount', []);
+
+                    if (!is_array($oldSplitPersonIds)) {
+                        $oldSplitPersonIds = array_map(fn($s) => $s->getCardUserId(), $splits);
+                        $oldSplitAmounts = array_map(fn($s) => $s->getAmount(), $splits);
+                    }
+                    ?>
+
+                    <div id="splits-container">
+                        <?php foreach ($oldSplitPersonIds as $index => $personId): ?>
+                            <div class="row split-row mb-3 align-items-center gx-2">
+                                <div class="col-12 col-md-6 mb-2 mb-md-0">
+                                    <select class="form-select" name="split_card_user_id[]">
+                                        <option value="">Selecione a pessoa...</option>
+                                        <?php foreach ($cardUsers as $cardUser): ?>
+                                            <option value="<?= $cardUser->getId() ?>"
+                                                    data-cards="<?= implode(',', $cardUser->getLinkedCardIds()) ?>"
+                                                    <?= (string)$personId === (string)$cardUser->getId() ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($cardUser->getName()) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-9 col-md-5">
+                                    <input type="text" class="form-control currency-mask split-amount-display"
+                                           inputmode="numeric" placeholder="R$ 0,00"/>
+                                    <input type="hidden" name="split_amount[]" class="split-amount-hidden"
+                                           value="<?= htmlspecialchars($oldSplitAmounts[$index] ?? '0.00') ?>"/>
+                                </div>
+                                <div class="col-3 col-md-1">
+                                    <button type="button" class="btn btn-icon btn-outline-danger remove-split-row w-100">
+                                        <i class="icon-base bx bx-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <button type="button" id="add-split-btn" class="btn btn-sm btn-outline-primary mb-6">
+                        <i class="icon-base bx bx-plus"></i> Adicionar pessoa
+                    </button>
+
+                    <template id="split-row-template">
+                        <div class="row split-row mb-3 align-items-center gx-2">
+                            <div class="col-12 col-md-6 mb-2 mb-md-0">
+                                <select class="form-select" name="split_card_user_id[]">
+                                    <option value="">Selecione a pessoa...</option>
+                                    <?php foreach ($cardUsers as $cardUser): ?>
+                                        <option value="<?= $cardUser->getId() ?>"
+                                                data-cards="<?= implode(',', $cardUser->getLinkedCardIds()) ?>">
+                                            <?= htmlspecialchars($cardUser->getName()) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-9 col-md-5">
+                                <input type="text" class="form-control currency-mask split-amount-display"
+                                       inputmode="numeric" placeholder="R$ 0,00"/>
+                                <input type="hidden" name="split_amount[]" class="split-amount-hidden" value="0.00"/>
+                            </div>
+                            <div class="col-3 col-md-1">
+                                <button type="button" class="btn btn-icon btn-outline-danger remove-split-row w-100">
+                                    <i class="icon-base bx bx-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
                 <button class="btn btn-primary" type="submit">Salvar Alterações</button>

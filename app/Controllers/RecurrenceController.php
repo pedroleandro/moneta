@@ -4,14 +4,17 @@ namespace App\Controllers;
 
 use App\Core\AuditLog;
 use App\Core\Auth;
+use App\Core\Connection;
 use App\Core\Controller;
 use App\Core\LogEvent;
 use App\Core\Logger;
 use App\Core\Message;
 use App\Models\BankAccount;
+use App\Models\CardUser;
 use App\Models\Category;
 use App\Models\CreditCard;
 use App\Models\Recurrence;
+use App\Models\RecurrenceSplit;
 
 class RecurrenceController extends Controller
 {
@@ -52,6 +55,7 @@ class RecurrenceController extends Controller
             "categories" => Category::findAllForUser($userId),
             "accounts" => BankAccount::findAllForUser($userId),
             "cards" => CreditCard::findAllForUser($userId),
+            "cardUsers" => CardUser::findAllForUser($userId),
         ]);
 
         clear_old();
@@ -100,11 +104,53 @@ class RecurrenceController extends Controller
 
             $recurrence->validateAccountOrCard();
 
+            $splitsResult = $creditCardId
+                ? CardUser::validateSplitAssignments(
+                    $data["split_card_user_id"] ?? [],
+                    $data["split_amount"] ?? [],
+                    $userId,
+                    $creditCardId,
+                    $recurrence->getAmount()
+                )
+                : CardUser::validateHouseholdSplitAssignments(
+                    $data["split_card_user_id"] ?? [],
+                    $data["split_amount"] ?? [],
+                    $userId,
+                    $recurrence->getAmount()
+                );
+
+            if (is_string($splitsResult)) {
+                flash_old($data);
+                Message::error($splitsResult);
+                redirect("/recorrencias/nova");
+                return;
+            }
+
             $recurrence->fill([
                 "next_occurrence_date" => $recurrence->calculateFirstOccurrenceDate(),
             ]);
 
-            $recurrence->save();
+            $connection = Connection::getInstance();
+            $connection->beginTransaction();
+
+            try {
+                $recurrence->save();
+
+                foreach ($splitsResult as $split) {
+                    $recurrenceSplit = new RecurrenceSplit();
+                    $recurrenceSplit->fill([
+                        "recurrence_id" => $recurrence->getId(),
+                        "card_user_id" => $split["card_user_id"],
+                        "amount" => $split["amount"],
+                    ]);
+                    $recurrenceSplit->save();
+                }
+
+                $connection->commit();
+            } catch (\Throwable $inner) {
+                $connection->rollBack();
+                throw $inner;
+            }
 
             AuditLog::record(LogEvent::RECURRENCE_CREATED, $userId, [
                 "recurrence_id" => $recurrence->getId(),
@@ -151,6 +197,8 @@ class RecurrenceController extends Controller
                 "categories" => Category::findAllForUser($userId),
                 "accounts" => BankAccount::findAllForUser($userId),
                 "cards" => CreditCard::findAllForUser($userId),
+                "cardUsers" => CardUser::findAllForUser($userId),
+                "splits" => RecurrenceSplit::findAllForRecurrence($id),
             ]);
 
             clear_old();
@@ -219,7 +267,51 @@ class RecurrenceController extends Controller
 
             $recurrence->validateAccountOrCard();
 
-            $recurrence->save();
+            $splitsResult = $creditCardId
+                ? CardUser::validateSplitAssignments(
+                    $data["split_card_user_id"] ?? [],
+                    $data["split_amount"] ?? [],
+                    $userId,
+                    $creditCardId,
+                    $recurrence->getAmount()
+                )
+                : CardUser::validateHouseholdSplitAssignments(
+                    $data["split_card_user_id"] ?? [],
+                    $data["split_amount"] ?? [],
+                    $userId,
+                    $recurrence->getAmount()
+                );
+
+            if (is_string($splitsResult)) {
+                flash_old($data);
+                Message::error($splitsResult);
+                redirect("/recorrencias/{$id}/editar");
+                return;
+            }
+
+            $connection = Connection::getInstance();
+            $connection->beginTransaction();
+
+            try {
+                $recurrence->save();
+
+                RecurrenceSplit::deleteAllForRecurrence($id);
+
+                foreach ($splitsResult as $split) {
+                    $recurrenceSplit = new RecurrenceSplit();
+                    $recurrenceSplit->fill([
+                        "recurrence_id" => $id,
+                        "card_user_id" => $split["card_user_id"],
+                        "amount" => $split["amount"],
+                    ]);
+                    $recurrenceSplit->save();
+                }
+
+                $connection->commit();
+            } catch (\Throwable $inner) {
+                $connection->rollBack();
+                throw $inner;
+            }
 
             AuditLog::record(LogEvent::RECURRENCE_UPDATED, $userId, [
                 "recurrence_id" => $recurrence->getId(),
