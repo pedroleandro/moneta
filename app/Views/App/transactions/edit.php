@@ -137,7 +137,7 @@
                     </div>
                 <?php endif; ?>
 
-                <div id="splits-section" style="<?= $isCardSelected ? '' : 'display:none;' ?>">
+                <div id="splits-section">
                     <hr class="my-6"/>
                     <label class="form-label d-block mb-3">
                         Dividir com pessoas <small class="text-body-secondary">(opcional)</small>

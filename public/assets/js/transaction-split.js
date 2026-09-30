@@ -15,11 +15,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function refreshRowOptions(row) {
         const creditCardSelect = document.getElementById('credit_card_id');
+        const cardRadio = document.getElementById('pm_card');
+        const isCardMode = cardRadio ? cardRadio.checked : !!(creditCardSelect && creditCardSelect.value);
         const selectedCard = creditCardSelect ? creditCardSelect.value : '';
         const select = row.querySelector('select');
 
         Array.from(select.options).forEach(function (option) {
             if (!option.dataset.cards) return;
+
+            if (!isCardMode) {
+                option.style.display = '';
+                return;
+            }
+
             const visible = option.dataset.cards.split(',').includes(selectedCard);
             option.style.display = visible ? '' : 'none';
         });
@@ -58,4 +66,15 @@ document.addEventListener('DOMContentLoaded', function () {
             Array.from(container.querySelectorAll('.split-row')).forEach(refreshRowOptions);
         });
     }
+
+    const pmAccountRadio = document.getElementById('pm_account');
+    const pmCardRadio = document.getElementById('pm_card');
+
+    [pmAccountRadio, pmCardRadio].forEach(function (radio) {
+        if (radio) {
+            radio.addEventListener('change', function () {
+                Array.from(container.querySelectorAll('.split-row')).forEach(refreshRowOptions);
+            });
+        }
+    });
 });

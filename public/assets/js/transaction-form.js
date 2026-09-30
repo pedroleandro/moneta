@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const wrapperCard = document.getElementById('wrapper-card');
     const bankAccountSelect = document.getElementById('bank_account_id');
     const creditCardSelect = document.getElementById('credit_card_id');
-    const splitsSection = document.getElementById('splits-section');
 
     function filterCategories() {
         if (!typeSelect || !categorySelect) return;
@@ -36,12 +35,10 @@ document.addEventListener('DOMContentLoaded', function () {
             wrapperAccount.style.display = 'none';
             wrapperCard.style.display = '';
             if (bankAccountSelect) bankAccountSelect.value = '';
-            if (splitsSection) splitsSection.style.display = '';
         } else {
             wrapperAccount.style.display = '';
             wrapperCard.style.display = 'none';
             if (creditCardSelect) creditCardSelect.value = '';
-            if (splitsSection) splitsSection.style.display = 'none';
         }
 
         toggleIncomeOption();

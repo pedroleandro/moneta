@@ -197,24 +197,33 @@ class TransactionController extends Controller
                         $creditCard->getId(),
                         $transaction->getAmount()
                     );
+                } elseif ($bankAccount) {
+                    $splitsResult = CardUser::validateHouseholdSplitAssignments(
+                        $data["split_card_user_id"] ?? [],
+                        $data["split_amount"] ?? [],
+                        $userId,
+                        $transaction->getAmount()
+                    );
+                } else {
+                    $splitsResult = [];
+                }
 
-                    if (is_string($splitsResult)) {
-                        $connection->rollBack();
-                        flash_old($data);
-                        Message::error($splitsResult);
-                        redirect("/lancamentos/novo");
-                        return;
-                    }
+                if (is_string($splitsResult)) {
+                    $connection->rollBack();
+                    flash_old($data);
+                    Message::error($splitsResult);
+                    redirect("/lancamentos/novo");
+                    return;
+                }
 
-                    foreach ($splitsResult as $split) {
-                        $transactionSplit = new TransactionSplit();
-                        $transactionSplit->fill([
-                            "transaction_id" => $transaction->getId(),
-                            "card_user_id" => $split["card_user_id"],
-                            "amount" => $split["amount"],
-                        ]);
-                        $transactionSplit->save();
-                    }
+                foreach ($splitsResult as $split) {
+                    $transactionSplit = new TransactionSplit();
+                    $transactionSplit->fill([
+                        "transaction_id" => $transaction->getId(),
+                        "card_user_id" => $split["card_user_id"],
+                        "amount" => $split["amount"],
+                    ]);
+                    $transactionSplit->save();
                 }
 
                 $transaction->applyBalanceEffect();
@@ -416,24 +425,33 @@ class TransactionController extends Controller
                         $creditCard->getId(),
                         $transaction->getAmount()
                     );
+                } elseif ($bankAccount) {
+                    $splitsResult = CardUser::validateHouseholdSplitAssignments(
+                        $data["split_card_user_id"] ?? [],
+                        $data["split_amount"] ?? [],
+                        $userId,
+                        $transaction->getAmount()
+                    );
+                } else {
+                    $splitsResult = [];
+                }
 
-                    if (is_string($splitsResult)) {
-                        $connection->rollBack();
-                        flash_old($data);
-                        Message::error($splitsResult);
-                        redirect("/lancamentos/{$id}/editar");
-                        return;
-                    }
+                if (is_string($splitsResult)) {
+                    $connection->rollBack();
+                    flash_old($data);
+                    Message::error($splitsResult);
+                    redirect("/lancamentos/{$id}/editar");
+                    return;
+                }
 
-                    foreach ($splitsResult as $split) {
-                        $transactionSplit = new TransactionSplit();
-                        $transactionSplit->fill([
-                            "transaction_id" => $id,
-                            "card_user_id" => $split["card_user_id"],
-                            "amount" => $split["amount"],
-                        ]);
-                        $transactionSplit->save();
-                    }
+                foreach ($splitsResult as $split) {
+                    $transactionSplit = new TransactionSplit();
+                    $transactionSplit->fill([
+                        "transaction_id" => $id,
+                        "card_user_id" => $split["card_user_id"],
+                        "amount" => $split["amount"],
+                    ]);
+                    $transactionSplit->save();
                 }
 
                 $transaction->save();
