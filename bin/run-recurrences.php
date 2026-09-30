@@ -8,7 +8,9 @@ use App\Models\BankAccount;
 use App\Models\CardInvoice;
 use App\Models\CreditCard;
 use App\Models\Recurrence;
+use App\Models\RecurrenceSplit;
 use App\Models\Transaction;
+use App\Models\TransactionSplit;
 use App\Models\UserNotice;
 
 Logger::info("Recorrências: início da execução do cron");
@@ -50,6 +52,18 @@ foreach ($recurrences as $recurrence) {
         }
 
         $transaction->save();
+
+        $recurrenceSplits = RecurrenceSplit::findAllForRecurrence($recurrence->getId());
+
+        foreach ($recurrenceSplits as $recurrenceSplit) {
+            $transactionSplit = new TransactionSplit();
+            $transactionSplit->fill([
+                "transaction_id" => $transaction->getId(),
+                "card_user_id" => $recurrenceSplit->getCardUserId(),
+                "amount" => $recurrenceSplit->getAmount(),
+            ]);
+            $transactionSplit->save();
+        }
 
         if ($transaction->getCardInvoiceId()) {
             CardInvoice::find($transaction->getCardInvoiceId())?->recalculateTotal();
