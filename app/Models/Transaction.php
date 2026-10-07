@@ -382,7 +382,7 @@ class Transaction extends AbstractModel
             $params["data_fim"] = $filters["data_fim"];
         }
 
-        $sql .= " ORDER BY t.created_at DESC, t.id DESC";
+        $sql .= " ORDER BY COALESCE(ip.first_installment_date, t.transaction_date) DESC, t.id DESC";
 
         $statement = $model->connection->prepare($sql);
         $statement->execute($params);
