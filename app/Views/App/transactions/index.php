@@ -141,14 +141,15 @@
                 <tbody>
                 <?php if (empty($transactions)): ?>
                     <tr class="table-empty-row">
-                        <td colspan="7" class="text-center py-6">Nenhum lançamento encontrado.</td>
+                        <td colspan="8" class="text-center py-6">Nenhum lançamento encontrado.</td>
                     </tr>
                 <?php endif; ?>
 
                 <?php foreach ($transactions as $transaction): ?>
                     <tr>
-                        <td data-label="Data da Compra">
-                            <?= date('d/m/Y', strtotime($transaction->getPurchaseDate() ?? $transaction->getTransactionDate())) ?>
+                        <?php $purchaseDate = $transaction->getPurchaseDate() ?? $transaction->getTransactionDate(); ?>
+                        <td data-label="Data da Compra" data-order="<?= $purchaseDate ?>">
+                            <?= date('d/m/Y', strtotime($purchaseDate)) ?>
                         </td>
                         <td data-label="Descrição">
                             <?= htmlspecialchars($transaction->getDescription()) ?>
@@ -167,7 +168,8 @@
                         $isPositive = $transaction->getType() === 'receita'
                                 || ($transaction->getType() === 'transferencia' && !$transaction->isTransferOutgoing());
                         ?>
-                        <td data-label="Valor" class="text-end <?= $isPositive ? 'text-success' : 'text-danger' ?>">
+                        <td data-label="Valor" class="text-end <?= $isPositive ? 'text-success' : 'text-danger' ?>"
+                            data-order="<?= $isPositive ? $transaction->getAmount() : -$transaction->getAmount() ?>">
                             <?= $isPositive ? '+' : '-' ?>
                             R$ <?= number_format($transaction->getAmount(), 2, ',', '.') ?>
                         </td>
@@ -178,9 +180,10 @@
                                 <span class="badge bg-label-warning">Pendente</span>
                             <?php endif; ?>
                         </td>
-                        <td data-label="Vencimento">
-                            <?php if ($transaction->getCreditCardId() && $transaction->getInvoiceDueDate()): ?>
-                                <?= date('d/m/Y', strtotime($transaction->getInvoiceDueDate())) ?>
+                        <?php $dueDate = $transaction->getCreditCardId() ? $transaction->getInvoiceDueDate() : null; ?>
+                        <td data-label="Vencimento" data-order="<?= $dueDate ?? '' ?>">
+                            <?php if ($dueDate): ?>
+                                <?= date('d/m/Y', strtotime($dueDate)) ?>
                             <?php else: ?>
                                 <span class="text-body-secondary">—</span>
                             <?php endif; ?>
