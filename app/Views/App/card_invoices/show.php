@@ -86,8 +86,9 @@
                         <?php endif; ?>
                         <?php foreach ($transactions as $transaction): ?>
                             <tr>
-                                <td data-label="Data">
-                                    <?= date('d/m/Y', strtotime($transaction->getTransactionDate())) ?>
+                                <?php $purchaseDate = $transaction->getPurchaseDate() ?? $transaction->getTransactionDate(); ?>
+                                <td data-label="Data" data-order="<?= $purchaseDate ?>">
+                                    <?= date('d/m/Y', strtotime($purchaseDate)) ?>
                                 </td>
                                 <td data-label="Descrição">
                                     <?= htmlspecialchars($transaction->getDescription()) ?>
