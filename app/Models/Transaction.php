@@ -489,11 +489,13 @@ class Transaction extends AbstractModel
         $model = new static();
 
         $statement = $model->connection->prepare(
-            "SELECT t.*, c.name AS category_name
-             FROM transactions t
-             LEFT JOIN categories c ON c.id = t.category_id
-             WHERE t.card_invoice_id = :invoice_id AND t.deleted_at IS NULL
-             ORDER BY t.created_at DESC, t.id DESC"
+            "SELECT t.*, c.name AS category_name,
+                ip.first_installment_date AS purchase_date
+         FROM transactions t
+         LEFT JOIN categories c ON c.id = t.category_id
+         LEFT JOIN installment_purchases ip ON ip.id = t.installment_purchase_id
+         WHERE t.card_invoice_id = :invoice_id AND t.deleted_at IS NULL
+         ORDER BY COALESCE(ip.first_installment_date, t.transaction_date) DESC, t.id DESC"
         );
         $statement->execute(["invoice_id" => $invoiceId]);
 
@@ -501,10 +503,12 @@ class Transaction extends AbstractModel
 
         foreach ($statement->fetchAll(\PDO::FETCH_ASSOC) as $row) {
             $categoryName = $row["category_name"];
-            unset($row["category_name"]);
+            $purchaseDate = $row["purchase_date"];
+            unset($row["category_name"], $row["purchase_date"]);
 
             $instance = static::hydrate($row);
             $instance->categoryName = $categoryName;
+            $instance->purchaseDate = $purchaseDate;
             $results[] = $instance;
         }
 
